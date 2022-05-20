@@ -54,7 +54,7 @@ public interface ContentService {
      * @param catalogue 大分类信息
      * @return 修改结果
      */
-    ModResp modCatalogue(@NonNull ModCatalogue catalogue);
+    @NonNull ModResp modCatalogue(@NonNull ModCatalogue catalogue);
 
     /**
      * 修改小分类
@@ -62,7 +62,16 @@ public interface ContentService {
      * @param category 小分类信息
      * @return 修改结果
      */
-    ModResp modCategory(@NonNull ModCategory category);
+    @NonNull ModResp modCategory(@NonNull ModCategory category);
+
+    /**
+     * 上传内容
+     *
+     * @param user  上传者
+     * @param essay 内容
+     * @return 上传结果
+     */
+    @NonNull UploadResp<Integer> uploadEssay(Integer user, UploadEssay essay);
 
     /**
      * @param key   唯一标识
@@ -117,5 +126,24 @@ public interface ContentService {
             return Tool.valid(catalogue) && Tool.valid(key) && !Tool.valid(name) && index == null;
         }
     }
+
+    /**
+     * 上传文字
+     *
+     * @param catalogue   大分类
+     * @param category    小分类
+     * @param title       内容标题
+     * @param imgs        介绍图片
+     * @param content     内容文章
+     * @param type        内容文章的类型
+     * @param description 内容描述
+     * @param tags        标签
+     */
+    record UploadEssay(@NonNull String catalogue, @NonNull String category, @NonNull String title,
+                       @NonNull Collection<UUID> imgs, @NonNull String content, @NonNull String type,
+                       String description, Collection<String> tags) {
+    }
+
+    ;
 
 }

@@ -2,9 +2,11 @@ package com.fei.mcresweb.controller;
 
 import com.fei.mcresweb.restservice.content.*;
 import com.fei.mcresweb.service.ContentService;
+import com.fei.mcresweb.service.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 
 /**
@@ -16,9 +18,11 @@ import java.util.Collection;
 @RequestMapping("/api/content")
 public class ContentController {
     private final ContentService service;
+    private final UserService user;
 
-    public ContentController(ContentService service) {
+    public ContentController(ContentService service, UserService user) {
         this.service = service;
+        this.user = user;
     }
 
     /**
@@ -88,5 +92,18 @@ public class ContentController {
     @ResponseBody
     public ModResp modCategory(@RequestBody ContentService.ModCategory body) {
         return service.modCategory(body);
+    }
+
+    /**
+     * 上传内容信息
+     *
+     * @param req  req
+     * @param body body
+     * @return 上传结果
+     */
+    @PostMapping("/upload-essay")
+    @ResponseBody
+    public UploadResp<Integer> uploadEssay(HttpServletRequest req, @RequestBody ContentService.UploadEssay body) {
+        return service.uploadEssay(user.getUserIdByCookie(req), body);
     }
 }

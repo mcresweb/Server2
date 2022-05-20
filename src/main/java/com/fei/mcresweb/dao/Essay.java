@@ -7,10 +7,8 @@ import org.hibernate.annotations.Comment;
 import org.springframework.lang.Nullable;
 
 import javax.persistence.*;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 内容数据
@@ -29,6 +27,7 @@ public class Essay {
      */
     @Id
     @Comment("内容ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
 
     /**
@@ -178,5 +177,9 @@ public class Essay {
      */
     public List<UUID> getImg() {
         return img.stream().map(EssayImgs::getImgId).toList();
+    }
+
+    public void setImg(@NonNull Collection<UUID> imgs) {
+        this.img = imgs.stream().map(uuid -> new EssayImgs(getId(), uuid)).collect(Collectors.toSet());
     }
 }

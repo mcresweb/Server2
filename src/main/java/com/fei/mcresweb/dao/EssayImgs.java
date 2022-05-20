@@ -22,6 +22,11 @@ import java.util.UUID;
 @Table(name = "essay_imgs")
 public class EssayImgs {
 
+    public EssayImgs(int essayId, @NonNull UUID imgId) {
+        setEssayId(essayId);
+        setImgId(imgId);
+    }
+
     /**
      * 内容
      */
@@ -52,6 +57,7 @@ public class EssayImgs {
     /**
      * 图片UUID
      */
+    @NonNull
     @Column(nullable = false, name = "img_id", columnDefinition = "BINARY(16)")
     UUID imgId;
 

@@ -4,6 +4,7 @@ import com.fei.mcresweb.dao.Config;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
@@ -127,13 +128,15 @@ public abstract class ConfType<T> {
             return exp;
         }
 
-        public long readLong(byte[] readBuffer) {
+        @Contract(pure = true)
+        public long readLong(byte @NotNull [] readBuffer) {
             return (((long)readBuffer[0] << 56) + ((long)(readBuffer[1] & 255) << 48) + ((long)(readBuffer[2] & 255)
                 << 40) + ((long)(readBuffer[3] & 255) << 32) + ((long)(readBuffer[4] & 255) << 24) + (
                 (readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255)));
         }
 
-        public byte[] writeLong(long v) {
+        @Contract(pure = true)
+        public byte @NotNull [] writeLong(long v) {
             byte[] writeBuffer = new byte[8];
             writeBuffer[0] = (byte)(v >>> 56);
             writeBuffer[1] = (byte)(v >>> 48);
@@ -178,7 +181,7 @@ public abstract class ConfType<T> {
     /**
      * 公共salt
      */
-    public static final ConfType<String> LOGIN_SALT = new ConfType<String>("public_salt", String.class) {
+    public static final ConfType<String> LOGIN_SALT = new ConfType<>("public_salt", String.class) {
         @Override
         public String getData(@NonNull Config conf) {
             return cache = new String(conf.getValue(), StandardCharsets.UTF_8);

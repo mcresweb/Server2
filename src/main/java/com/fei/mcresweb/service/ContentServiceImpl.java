@@ -113,11 +113,11 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public EssayDetail essay(int id) {
-        val raw = essayDao.findById(id).map(EssayDetail::new);
-        return raw.orElse(null);
+        return essayDao.findById(id).map(EssayDetail::new).orElse(null);
     }
 
     @Override
+    @NonNull
     public ModResp modCatalogue(@NonNull ModCatalogue data) {
         try {
             if (data.isCU()) {
@@ -132,16 +132,20 @@ public class ContentServiceImpl implements ContentService {
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {
-            clearCache();
             return ModResp.byErr(MSG_BAD_DATA);
+        } finally {
+            clearCache();
         }
         return ModResp.byErr(MSG_BAD_DATA);
     }
 
     private static final String MSG_NOT_FOUND_CATALOGUE = "未找到大分类!";
+    private static final String MSG_NOT_FOUND_CATEGORY = "未找到小分类!";
+    private static final String MSG_NOT_LOGIN = "未登录";
     private static final String MSG_BAD_DATA = "错误数据";
 
     @Override
+    @NonNull
     public ModResp modCategory(@NonNull ModCategory data) {
         try {
             if (data.isCU()) {
@@ -162,9 +166,40 @@ public class ContentServiceImpl implements ContentService {
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {
-            clearCache();
             return ModResp.byErr(MSG_BAD_DATA);
+        } finally {
+            clearCache();
         }
         return ModResp.byErr(MSG_BAD_DATA);
+    }
+
+    @Override
+    public @NonNull UploadResp<Integer> uploadEssay(Integer user, UploadEssay data) {
+        if (user == null)
+            return UploadResp.byErr(MSG_NOT_LOGIN);
+        if (!withCache(() -> cache_category.containsKey(data.catalogue())))
+            return UploadResp.byErr(MSG_NOT_FOUND_CATALOGUE);
+        if (!withCache(() -> cache_category.get(data.catalogue()).containsKey(data.category())))
+            return UploadResp.byErr(MSG_NOT_FOUND_CATEGORY);
+        for (val tag : data.tags())
+            if (tag.contains(","))
+                return UploadResp.byErr(MSG_BAD_DATA);
+
+        var essay = new Essay();
+        essay.setCatalogueKey(data.catalogue());
+        essay.setCategoryKey(data.category());
+        essay.setSenderID(user);
+        essay.setTitle(data.title());
+        essay.setImg(data.imgs());
+        essay.setContent(data.content());
+        essay.setType(data.type());
+        essay.setDescription(data.description());
+        essay.setTags(String.join(",", data.tags()));
+        try {
+            essay = essayDao.save(essay);
+            return UploadResp.byId(essay.getId());
+        } catch (DataAccessException e) {
+            return UploadResp.byErr(MSG_BAD_DATA);
+        }
     }
 }

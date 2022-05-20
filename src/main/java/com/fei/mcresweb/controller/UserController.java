@@ -1,8 +1,12 @@
 package com.fei.mcresweb.controller;
 
+import com.fei.mcresweb.defs.ConfType;
+import com.fei.mcresweb.defs.ConfigManager;
+import com.fei.mcresweb.defs.CookiesManager;
 import com.fei.mcresweb.restservice.user.*;
 import com.fei.mcresweb.service.UserService;
 import lombok.val;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,9 +22,13 @@ import javax.servlet.http.HttpServletResponse;
 @RequestMapping("/api/user")
 public class UserController {
     private final UserService service;
+    private final ConfigManager configManager;
+    @Autowired
+    private CookiesManager cookiesManager;
 
-    public UserController(UserService service) {
+    public UserController(UserService service, ConfigManager configManager) {
         this.service = service;
+        this.configManager = configManager;
     }
 
     /**
@@ -33,8 +41,11 @@ public class UserController {
     @ResponseBody
     public LoginInfo login(@RequestBody UserService.loginReq req, HttpServletResponse resp) {
         val info = service.login(req);
-        if (info.isSuccess())
-            resp.addCookie(new Cookie("a", "b"));
+        if (info.isSuccess()) {
+            val cook = cookiesManager.cookie(CookiesManager.CookiesField.LOGIN, service.summonToken(info.getUserid()));
+            cook.setMaxAge((int)(configManager.getOrSummon(ConfType.LOGIN_EXP, true) / 1000));
+            resp.addCookie(cook);
+        }
         return info;
     }
 
@@ -54,7 +65,7 @@ public class UserController {
      */
     @GetMapping("/logout")
     public void logout(HttpServletResponse resp) {
-        resp.addCookie(new Cookie("a", "b"));
+        resp.addCookie(cookiesManager.cookie(CookiesManager.CookiesField.LOGIN, null));
     }
 
     /**

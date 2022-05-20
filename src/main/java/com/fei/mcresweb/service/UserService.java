@@ -3,6 +3,8 @@ package com.fei.mcresweb.service;
 import com.fei.mcresweb.restservice.user.LoginInfo;
 import com.fei.mcresweb.restservice.user.RegisterInfo;
 import lombok.NonNull;
+import org.jetbrains.annotations.Contract;
+import org.springframework.lang.Nullable;
 
 /**
  * 用户服务
@@ -25,6 +27,24 @@ public interface UserService {
      * @return 注册信息
      */
     RegisterInfo register(@NonNull registerReq req);
+
+    /**
+     * 生成登录令牌
+     *
+     * @param user 用户
+     * @return 登录令牌
+     */
+    @NonNull String summonToken(int user);
+
+    /**
+     * 验证令牌
+     *
+     * @param token 登录令牌
+     * @return 用户ID / null
+     */
+    @Nullable
+    @Contract("null->null;_->_")
+    Integer checkToken(String token);
 
     /**
      * 登录请求

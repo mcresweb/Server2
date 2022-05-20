@@ -102,4 +102,8 @@ public class User {
     public int hashCode() {
         return getClass().hashCode();
     }
+
+    public boolean isVip() {
+        return vipLvl != VipLevel.NONE && vipExpire.isAfter(ZonedDateTime.now());
+    }
 }

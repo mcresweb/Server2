@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -42,9 +42,7 @@ public class UserController {
     public LoginInfo login(@RequestBody UserService.loginReq req, HttpServletResponse resp) {
         val info = service.login(req);
         if (info.isSuccess()) {
-            val cook = cookiesManager.cookie(CookiesManager.CookiesField.LOGIN, service.summonToken(info.getUserid()));
-            cook.setMaxAge((int)(configManager.getOrSummon(ConfType.LOGIN_EXP, true) / 1000));
-            resp.addCookie(cook);
+            resp.addCookie(service.summonTokenCookie(info.getUserid()));
         }
         return info;
     }
@@ -57,7 +55,7 @@ public class UserController {
     @GetMapping("/salt")
     @ResponseBody
     public SaltInfo salt() {
-        return null;
+        return new SaltInfo(configManager.getOrSummon(ConfType.LOGIN_SALT, true), System.currentTimeMillis());
     }
 
     /**
@@ -78,8 +76,9 @@ public class UserController {
     @ResponseBody
     public RegisterInfo register(@RequestBody UserService.registerReq req, HttpServletResponse resp) {
         val info = service.register(req);
-        if (info.isSuccess())
-            resp.addCookie(new Cookie("a", "b"));
+        if (info.isSuccess()) {
+            resp.addCookie(service.summonTokenCookie(info.getUserid()));
+        }
         return info;
     }
 
@@ -91,8 +90,8 @@ public class UserController {
      */
     @GetMapping("/info")
     @ResponseBody
-    public OtherUserInfo info(String id) {
-        return null;
+    public OtherUserInfo info(@RequestParam("id") int id) {
+        return service.infoOther(id);
     }
 
     /**
@@ -102,8 +101,9 @@ public class UserController {
      */
     @GetMapping("/me")
     @ResponseBody
-    public MyUserInfo me() {
-        return null;
+    public MyUserInfo me(HttpServletRequest req) {
+        val id = service.getUserIdByCookie(req);
+        return id == null ? null : service.infoMe(id);
     }
 
 }

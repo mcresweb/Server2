@@ -1,5 +1,6 @@
 package com.fei.mcresweb.restservice.user;
 
+import com.fei.mcresweb.dao.User;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -45,11 +46,27 @@ public class MyUserInfo {
     Boolean lock;
 
     /**
+     * 未登录
+     */
+    public static final MyUserInfo NOT_LOGIN = new MyUserInfo(false, null, null, null, null, null, null);
+
+    /**
      * 通过已登录的数据构造一个信息
      */
     @Contract("_, _, _, _, _, _ -> new")
     public static @NotNull MyUserInfo byLogin(@NonNull Integer id, @NonNull String name, @NonNull String email,
         boolean admin, boolean vip, boolean lock) {
         return new MyUserInfo(true, id, name, email, admin, vip, lock);
+    }
+
+    /**
+     * 从数据库构建
+     *
+     * @param user 数据库数据
+     * @return 他人信息
+     */
+    @Contract("_ -> new")
+    public static @NotNull MyUserInfo fromDatabase(@NonNull User user) {
+        return byLogin(user.getId(), user.getUsername(), user.getEmail(), user.isAdmin(), user.isVip(), false/*TODO*/);
     }
 }

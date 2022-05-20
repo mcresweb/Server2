@@ -57,7 +57,7 @@ public abstract class ConfType<T> {
 
         @Override
         public @NonNull String summon() {
-            return String.format("MRW-%s-", Long.toString(new Random().nextLong(), Character.MAX_RADIX));
+            return String.format("MRW-%s-", Long.toUnsignedString(new Random().nextLong(), Character.MAX_RADIX));
         }
     };
 
@@ -103,6 +103,50 @@ public abstract class ConfType<T> {
             return writeBuffer;
         }
     };
+
+    /**
+     * 登录时间戳范围
+     */
+    public static final ConfType<Long> LOGIN_TIME_RANGE = new ConfType<Long>("login_time_range", Long.class) {
+        /**有效期(ms)*/
+        @SuppressWarnings("FieldCanBeLocal")
+        private final long exp = 1000 * 60;
+
+        @Override
+        public Long getData(@NonNull Config conf) {
+            return cache = readLong(conf.getValue());
+        }
+
+        @Override
+        public void setByte(@NonNull Config conf, @NonNull Long data) {
+            conf.setValue(writeLong(cache = data));
+        }
+
+        @Override
+        public @NonNull Long summon() {
+            return exp;
+        }
+
+        public long readLong(byte[] readBuffer) {
+            return (((long)readBuffer[0] << 56) + ((long)(readBuffer[1] & 255) << 48) + ((long)(readBuffer[2] & 255)
+                << 40) + ((long)(readBuffer[3] & 255) << 32) + ((long)(readBuffer[4] & 255) << 24) + (
+                (readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255)));
+        }
+
+        public byte[] writeLong(long v) {
+            byte[] writeBuffer = new byte[8];
+            writeBuffer[0] = (byte)(v >>> 56);
+            writeBuffer[1] = (byte)(v >>> 48);
+            writeBuffer[2] = (byte)(v >>> 40);
+            writeBuffer[3] = (byte)(v >>> 32);
+            writeBuffer[4] = (byte)(v >>> 24);
+            writeBuffer[5] = (byte)(v >>> 16);
+            writeBuffer[6] = (byte)(v >>> 8);
+            writeBuffer[7] = (byte)(v);
+            return writeBuffer;
+        }
+    };
+
     /**
      * JWT私钥
      */
@@ -129,6 +173,26 @@ public abstract class ConfType<T> {
             return data;
         }
 
+    };
+
+    /**
+     * 公共salt
+     */
+    public static final ConfType<String> LOGIN_SALT = new ConfType<String>("public_salt", String.class) {
+        @Override
+        public String getData(@NonNull Config conf) {
+            return cache = new String(conf.getValue(), StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public void setByte(@NonNull Config conf, @NonNull String data) {
+            conf.setValue(data.getBytes(StandardCharsets.UTF_8));
+        }
+
+        @Override
+        public @NonNull String summon() {
+            return Long.toUnsignedString(new Random().nextLong(), Character.MAX_RADIX);
+        }
     };
 
     /**

@@ -32,6 +32,8 @@ import java.util.Date;
  */
 @Service
 public class UserServiceImpl implements UserService {
+    private static final String wrongUP = "错误的用户名密码";
+    private static final String wrongTime = "登录请求失效";
     /**
      * 用户DAO
      */
@@ -44,7 +46,6 @@ public class UserServiceImpl implements UserService {
      * cookie管理器
      */
     private final CookiesManager cookiesManager;
-
     /**
      * jwt加密密钥
      */
@@ -63,8 +64,21 @@ public class UserServiceImpl implements UserService {
         this.cookiesManager = cookiesManager;
     }
 
-    private static final String wrongUP = "错误的用户名密码";
-    private static final String wrongTime = "登录请求失效";
+    private static String hashString(String string) {
+        try {
+            val md = MessageDigest.getInstance("SHA-256");
+            md.update(string.getBytes());
+            md.digest();
+            return Tool.byte2hex(md.digest());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static String hashString(String str1, Object str2) {
+        return hashString(str1 + str2);
+    }
 
     @Override
     public LoginInfo login(@NonNull loginReq req) {
@@ -115,22 +129,6 @@ public class UserServiceImpl implements UserService {
     public MyUserInfo infoMe(int id) {
         val user = repo.findById(id);
         return user.map(MyUserInfo::fromDatabase).orElse(null);
-    }
-
-    private static String hashString(String string) {
-        try {
-            val md = MessageDigest.getInstance("SHA-256");
-            md.update(string.getBytes());
-            md.digest();
-            return Tool.byte2hex(md.digest());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static String hashString(String str1, Object str2) {
-        return hashString(str1 + str2);
     }
 
     @Override

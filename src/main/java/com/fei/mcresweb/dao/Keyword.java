@@ -1,12 +1,13 @@
 package com.fei.mcresweb.dao;
 
+import com.fei.mcresweb.defs.TokenLen;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
-import java.time.ZonedDateTime;
+import java.util.Date;
 
 /**
  * 会员码
@@ -25,29 +26,29 @@ public class Keyword {
     @Id
     @NonNull
     @Comment("会员码")
+    @Column(nullable = false, updatable = false, columnDefinition = "CHAR(" + TokenLen.TOKEN_LEN + ")")
     String id;
-
     /**
      * 是否已经使用
      */
     @Comment("是否已经使用")
-    boolean used;
-
+    boolean used = false;
     /**
      * 创建时间
      */
     @CreationTimestamp
-    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
     @NonNull
+    @Column(nullable = false, updatable = false)
     @Comment("创建时间")
-    ZonedDateTime generateTime;
-
+    Date generateTime;
     /**
      * 使用时间
      */
     @Comment("使用时间")
-    ZonedDateTime useTime;
-
+    @Column(insertable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    Date useTime;
     /**
      * 生成者
      */
@@ -57,11 +58,10 @@ public class Keyword {
     @ToString.Exclude
     @Comment("生成者")
     User generateUser;
-
     /**
      * 生成者ID
      */
-    @Column(nullable = false, name = "generator")
+    @Column(nullable = false, name = "generator", updatable = false)
     int generateUserID;
     /**
      * 生成者
@@ -71,10 +71,39 @@ public class Keyword {
     @ToString.Exclude
     @Comment("使用者")
     User user;
-
     /**
      * 生成者ID
      */
-    @Column(name = "user")
-    int userID;
+    @Column(name = "user", insertable = false)
+    Integer userID;
+    /**
+     * 价值
+     */
+    @Column(nullable = false, updatable = false)
+    @Comment("价值(会员天数)")
+    int value;
+    /**
+     * 过期时间,不指定则为永久
+     */
+    @Column(updatable = false)
+    @Comment("过期时间,不指定则为永久")
+    @Temporal(TemporalType.TIMESTAMP)
+    Date expire;
+
+    public Keyword(@NonNull String id, int generateUser, int value, Date expire) {
+        setId(id);
+        setUsed(false);
+        setGenerateUserID(generateUser);
+        setValue(value);
+        setExpire(expire);
+    }
+
+    /**
+     * 会员码
+     */
+    public void setId(@NonNull final String id) {
+        if (id.length() != TokenLen.TOKEN_LEN)
+            throw new IllegalArgumentException("Bad Token length: " + id.length());
+        this.id = id;
+    }
 }

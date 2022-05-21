@@ -21,13 +21,16 @@ import java.util.stream.Collectors;
  */
 @Service
 public class ContentServiceImpl implements ContentService {
+    private static final String MSG_NOT_FOUND_CATALOGUE = "未找到大分类!";
+    private static final String MSG_NOT_FOUND_CATEGORY = "未找到小分类!";
+    private static final String MSG_NOT_LOGIN = "未登录";
+    private static final String MSG_BAD_DATA = "错误数据";
     private final CatalogueDao catalogueDao;
     private final CategoryDao categoryDao;
     private final EssayDao essayDao;
-
+    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<String, CatalogueInfo> cache_catalogue;
     private Map<String, LinkedHashMap<String, CategoryInfo>> cache_category;
-    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
     public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, EssayDao essayDao) {
         this.catalogueDao = catalogueDao;
@@ -138,11 +141,6 @@ public class ContentServiceImpl implements ContentService {
         }
         return ModResp.byErr(MSG_BAD_DATA);
     }
-
-    private static final String MSG_NOT_FOUND_CATALOGUE = "未找到大分类!";
-    private static final String MSG_NOT_FOUND_CATEGORY = "未找到小分类!";
-    private static final String MSG_NOT_LOGIN = "未登录";
-    private static final String MSG_BAD_DATA = "错误数据";
 
     @Override
     @NonNull

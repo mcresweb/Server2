@@ -18,22 +18,21 @@ import javax.persistence.Table;
 @NoArgsConstructor
 @Table(name = "config")
 public class Config {
-    public Config(@NonNull ConfType<?> ct) {
-        type = ct.getName();
-    }
-
     @Id
     @NonNull
     @Column(name = "type", nullable = false)
     String type;
-
-    public ConfType<?> getType() {
-        return ConfType.ALL_TYPES_VIEW.get(type);
-    }
-
     @Setter
     @Getter
     @Column(name = "value", nullable = false, columnDefinition = "BLOB")
     private byte @NonNull [] value;
+
+    public Config(@NonNull ConfType<?> ct) {
+        type = ct.getName();
+    }
+
+    public ConfType<?> getType() {
+        return ConfType.ALL_TYPES_VIEW.get(type);
+    }
 
 }

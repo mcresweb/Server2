@@ -20,18 +20,6 @@ import java.util.Random;
 @Getter
 @ToString
 public abstract class ConfType<T> {
-    /**
-     * 此配置项的名称
-     */
-    @ToString.Include
-    private final String name;
-    /**
-     * 此配置项的数据类型
-     */
-    private final Class<T> dataType;
-
-    @Getter
-    protected T cache;
 
     /**
      * 所有类型
@@ -41,7 +29,6 @@ public abstract class ConfType<T> {
      * 所有类型
      */
     public static final Map<String, ConfType<?>> ALL_TYPES_VIEW = Collections.unmodifiableMap(ALL_TYPES);
-
     /**
      * 任意数据的前缀
      */
@@ -104,7 +91,6 @@ public abstract class ConfType<T> {
             return writeBuffer;
         }
     };
-
     /**
      * 登录时间戳范围
      */
@@ -149,7 +135,6 @@ public abstract class ConfType<T> {
             return writeBuffer;
         }
     };
-
     /**
      * JWT私钥
      */
@@ -177,7 +162,6 @@ public abstract class ConfType<T> {
         }
 
     };
-
     /**
      * 公共salt
      */
@@ -197,6 +181,25 @@ public abstract class ConfType<T> {
             return Long.toUnsignedString(new Random().nextLong(), Character.MAX_RADIX);
         }
     };
+    /**
+     * 此配置项的名称
+     */
+    @ToString.Include
+    private final String name;
+    /**
+     * 此配置项的数据类型
+     */
+    private final Class<T> dataType;
+    @Getter
+    protected T cache;
+
+    private ConfType(String name, Class<T> dataType) {
+        this.name = name;
+        this.dataType = dataType;
+        synchronized (ALL_TYPES) {
+            ALL_TYPES.put(name, this);
+        }
+    }
 
     /**
      * 获取数据
@@ -218,12 +221,4 @@ public abstract class ConfType<T> {
      * 生成数据
      */
     public abstract @NonNull T summon();
-
-    private ConfType(String name, Class<T> dataType) {
-        this.name = name;
-        this.dataType = dataType;
-        synchronized (ALL_TYPES) {
-            ALL_TYPES.put(name, this);
-        }
-    }
 }

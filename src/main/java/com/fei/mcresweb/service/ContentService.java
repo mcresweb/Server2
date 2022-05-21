@@ -144,6 +144,4 @@ public interface ContentService {
                        String description, Collection<String> tags) {
     }
 
-    ;
-
 }

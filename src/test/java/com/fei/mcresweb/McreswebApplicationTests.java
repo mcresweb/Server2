@@ -8,6 +8,6 @@ class McreswebApplicationTests {
 
     @Test
     void contextLoads() {
-        
+
     }
 }

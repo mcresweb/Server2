@@ -10,7 +10,7 @@ import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
-import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.Objects;
 
 /**
@@ -43,7 +43,7 @@ public class User {
      */
     @Column(nullable = false)
     @NonNull
-    @Comment(" mima")
+    @Comment("密码")
     String password;
     /**
      * 邮箱
@@ -63,8 +63,9 @@ public class User {
     /**
      * vip过期时间
      */
+    @Temporal(TemporalType.TIMESTAMP)
     @Comment("VIP到期时间")
-    ZonedDateTime vipExpire;
+    Date vipExpire;
 
     /**
      * 是否是管理员
@@ -75,10 +76,11 @@ public class User {
      * 注册时间
      */
     @CreationTimestamp
-    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = false, updatable = false)
     @NonNull
     @Comment("账户创建时间")
-    ZonedDateTime createTime;
+    Date createTime;
 
     public LoginInfo toLoginInfo() {
         return LoginInfo.byUserId(id);
@@ -104,6 +106,6 @@ public class User {
     }
 
     public boolean isVip() {
-        return vipLvl != VipLevel.NONE && vipExpire.isAfter(ZonedDateTime.now());
+        return vipLvl != VipLevel.NONE && vipExpire.getTime() > System.currentTimeMillis();
     }
 }

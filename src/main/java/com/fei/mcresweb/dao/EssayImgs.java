@@ -22,11 +22,6 @@ import java.util.UUID;
 @Table(name = "essay_imgs")
 public class EssayImgs {
 
-    public EssayImgs(int essayId, @NonNull UUID imgId) {
-        setEssayId(essayId);
-        setImgId(imgId);
-    }
-
     /**
      * 内容
      */
@@ -37,13 +32,11 @@ public class EssayImgs {
     @ToString.Exclude
     @Comment("内容ID")
     Essay essay;
-
     /**
      * 内容ID
      */
     @Column(nullable = false, name = "essay_id")
     int essayId;
-
     /**
      * 图片
      */
@@ -60,6 +53,11 @@ public class EssayImgs {
     @NonNull
     @Column(nullable = false, name = "img_id", columnDefinition = "BINARY(16)")
     UUID imgId;
+
+    public EssayImgs(int essayId, @NonNull UUID imgId) {
+        setEssayId(essayId);
+        setImgId(imgId);
+    }
 
     @Override
     public boolean equals(Object o) {

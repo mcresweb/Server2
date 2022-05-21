@@ -17,6 +17,10 @@ import org.jetbrains.annotations.NotNull;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MyUserInfo {
     /**
+     * 未登录
+     */
+    public static final MyUserInfo NOT_LOGIN = new MyUserInfo(false, null, null, null, null, null, null);
+    /**
      * 是否处于登录状态
      */
     boolean login;
@@ -44,11 +48,6 @@ public class MyUserInfo {
      * 是否被锁定
      */
     Boolean lock;
-
-    /**
-     * 未登录
-     */
-    public static final MyUserInfo NOT_LOGIN = new MyUserInfo(false, null, null, null, null, null, null);
 
     /**
      * 通过已登录的数据构造一个信息

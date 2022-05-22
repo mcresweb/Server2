@@ -25,4 +25,5 @@ public interface KeywordDao extends CrudRepository<Keyword, String> {
     Page<Keyword> findByGenerateUserIDEqualsAndUsedEquals(int generateUserID, boolean used, Pageable pageable);
 
     Page<Keyword> findByUsedEquals(boolean used, Pageable pageable);
+    
 }

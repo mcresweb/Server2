@@ -1,6 +1,6 @@
 package com.fei.mcresweb.dao;
 
-import com.fei.mcresweb.defs.TokenLen;
+import com.fei.mcresweb.defs.TokenHelper;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.Comment;
@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * 会员码
@@ -26,7 +27,7 @@ public class Keyword {
     @Id
     @NonNull
     @Comment("会员码")
-    @Column(nullable = false, updatable = false, columnDefinition = "CHAR(" + TokenLen.TOKEN_LEN + ")")
+    @Column(nullable = false, updatable = false, columnDefinition = "CHAR(" + TokenHelper.TOKEN_LEN + ")")
     String id;
     /**
      * 是否已经使用
@@ -99,11 +100,32 @@ public class Keyword {
     }
 
     /**
+     * 是否已经过期
+     *
+     * @return 是否已经过期
+     */
+    public boolean isExpire() {
+        return expire.getTime() > System.currentTimeMillis();
+    }
+
+    /**
      * 会员码
      */
-    public void setId(@NonNull final String id) {
-        if (id.length() != TokenLen.TOKEN_LEN)
+    public void setId(@NonNull String id) {
+        id = id.toUpperCase(Locale.ENGLISH);
+        if (TokenHelper.isInvalid(id))
             throw new IllegalArgumentException("Bad Token length: " + id.length());
         this.id = id;
+    }
+
+    /**
+     * 使用此token
+     *
+     * @param user 使用者
+     */
+    public void use(int user) {
+        setUsed(true);
+        setUserID(user);
+        setUseTime(new Date());
     }
 }

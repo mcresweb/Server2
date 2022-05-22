@@ -2,8 +2,12 @@ package com.fei.mcresweb.service;
 
 import com.fei.mcresweb.dao.Keyword;
 import com.fei.mcresweb.dao.KeywordDao;
-import com.fei.mcresweb.defs.TokenLen;
+import com.fei.mcresweb.dao.User;
+import com.fei.mcresweb.dao.UserDao;
+import com.fei.mcresweb.defs.TokenHelper;
 import com.fei.mcresweb.restservice.keyword.KeywordList;
+import com.fei.mcresweb.restservice.keyword.RemoveResp;
+import com.fei.mcresweb.restservice.keyword.UseResult;
 import lombok.val;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -15,8 +19,11 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Random;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * 会员码服务
@@ -26,13 +33,21 @@ public class KeywordServiceImpl implements KeywordService {
     /**
      * TOKEN长度
      */
-    public static final int TOKEN_LEN = TokenLen.TOKEN_LEN;
+    public static final int TOKEN_LEN = TokenHelper.TOKEN_LEN;
     private final Random random = new SecureRandom();
     @Autowired
     private KeywordDao keywordDao;
+    @Autowired
+    private UserDao userDao;
+
+    private static final String NOT_LOGIN = "未登录";
+    private static final String NOT_ADMIN = "非管理员";
+    private static final String BAD_TOKEN = "无效token";
 
     @Override
     public String[] summon(Integer user, @NotNull SummonReq req) {
+        if (user == null)
+            return null;
         //TODO admin check
         val expire = req.expire() == null ? null : new Date(req.expire());
         val list = IntStream//
@@ -46,6 +61,8 @@ public class KeywordServiceImpl implements KeywordService {
 
     @Override
     public @NotNull KeywordList listKeyword(Integer reqUser, int type, Integer summoner, Integer user, int page) {
+        if (reqUser == null)
+            return KeywordList.EMPTY;
         //TODO admin check
 
         val lType = ListType.get(type);
@@ -85,6 +102,63 @@ public class KeywordServiceImpl implements KeywordService {
         return KeywordList.valueOf(keywords);
     }
 
+    @Override
+    public synchronized @NotNull UseResult useKeyword(Integer userID, UseReq body) {
+        if (userID == null)
+            return new UseResult(NOT_LOGIN);
+        val user = getUser(userID);
+
+        //TODO ADMIN check
+
+        val kw = keywordDao.findById(body.token()).orElse(null);
+        if (kw == null || kw.isUsed() || kw.isExpire())
+            return new UseResult(BAD_TOKEN);
+
+        kw.use(userID);
+        keywordDao.save(kw);
+
+        val expire = user.addVip(kw.getValue());
+        userDao.save(user);
+
+        return new UseResult(expire);
+    }
+
+    @Override
+    public synchronized @NotNull RemoveResp removeKeyword(Integer userID, RemoveReq body) {
+        if (userID == null)
+            return RemoveResp.byErr(NOT_LOGIN, null);
+        val user = getUser(userID);
+
+        //TODO ADMIN check
+
+        //有效的token
+        val valid = StreamSupport.stream(keywordDao.findAllById(body.tokens()).spliterator(), true)//
+            .filter(kw -> !kw.isUsed())//
+            .map(Keyword::getId)//
+            .toList();
+
+        if (valid.size() != body.tokens().size()) {
+            val all = new HashSet<>(body.tokens());
+            valid.forEach(all::remove);
+            return RemoveResp.byErr(BAD_TOKEN, all);
+        }
+
+        keywordDao.deleteAllById(valid);
+
+        return RemoveResp.SUCCESS;
+    }
+
+    /**
+     * 获取用户
+     *
+     * @param userID 用户ID
+     * @return 用户
+     * @throws IllegalArgumentException 找不到用户
+     */
+    private User getUser(int userID) {
+        return userDao.findById(userID).orElseThrow(() -> new IllegalArgumentException("Not Found User"));
+    }
+
     /**
      * 生成token
      *
@@ -104,7 +178,7 @@ public class KeywordServiceImpl implements KeywordService {
         while (sb.length() < TOKEN_LEN)
             sb.append(Integer.toUnsignedString(random.nextInt(Character.MAX_RADIX), Character.MAX_RADIX));
 
-        return sb.substring(0, TOKEN_LEN);
+        return sb.substring(0, TOKEN_LEN).toUpperCase(Locale.ENGLISH);
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.fei.mcresweb.controller;
 
 import com.fei.mcresweb.restservice.keyword.KeywordList;
+import com.fei.mcresweb.restservice.keyword.RemoveResp;
+import com.fei.mcresweb.restservice.keyword.UseResult;
 import com.fei.mcresweb.service.KeywordService;
 import com.fei.mcresweb.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,24 @@ public class KeywordController {
         @RequestParam(value = "user", required = false) Integer user,
         @RequestParam(value = "page", defaultValue = "0") int page) {
         return service.listKeyword(userService.getUserIdByCookie(req), type, summoner, user, page);
+    }
+
+    /**
+     * 使用会员码
+     */
+    @PostMapping("/use")
+    @ResponseBody
+    public UseResult use(HttpServletRequest req, @RequestBody KeywordService.UseReq body) {
+        return service.useKeyword(userService.getUserIdByCookie(req), body);
+    }
+
+    /**
+     * 移除会员码
+     */
+    @PostMapping("/remove")
+    @ResponseBody
+    public RemoveResp remove(HttpServletRequest req, @RequestBody KeywordService.RemoveReq body) {
+        return service.removeKeyword(userService.getUserIdByCookie(req), body);
     }
 
 }

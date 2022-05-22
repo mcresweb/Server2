@@ -10,6 +10,7 @@ import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
 
@@ -30,6 +31,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Comment("用户ID")
+    @Column(updatable = false)
     int id;
     /**
      * 用户名
@@ -71,6 +73,7 @@ public class User {
      * 是否是管理员
      */
     @Comment("是否是管理员")
+    @Column(nullable = false)
     boolean isAdmin = false;
     /**
      * 注册时间
@@ -107,5 +110,23 @@ public class User {
 
     public boolean isVip() {
         return vipLvl != VipLevel.NONE && vipExpire.getTime() > System.currentTimeMillis();
+    }
+
+    /**
+     * 添加VIP天数
+     *
+     * @param day 增加的天数
+     * @return 当前有效期
+     */
+    public long addVip(int day) {
+        val oldExpire = getVipExpire();
+        val calendar = Calendar.getInstance();
+        if (oldExpire != null && calendar.getTimeInMillis() < oldExpire.getTime())
+            calendar.setTimeInMillis(oldExpire.getTime());
+        calendar.add(Calendar.DAY_OF_MONTH, day);
+        setVipExpire(calendar.getTime());
+        if (VipLevel.NONE == getVipLvl())
+            setVipLvl(VipLevel.VIP);//TODO
+        return calendar.getTimeInMillis();
     }
 }

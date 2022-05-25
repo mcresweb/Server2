@@ -3,8 +3,8 @@ package com.fei.mcresweb.service;
 import com.fei.mcresweb.Tool;
 import com.fei.mcresweb.dao.User;
 import com.fei.mcresweb.dao.UserDao;
-import com.fei.mcresweb.defs.ConfType;
 import com.fei.mcresweb.defs.ConfigManager;
+import com.fei.mcresweb.defs.Configs;
 import com.fei.mcresweb.defs.CookiesManager;
 import com.fei.mcresweb.restservice.user.LoginInfo;
 import com.fei.mcresweb.restservice.user.MyUserInfo;
@@ -16,6 +16,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.NonNull;
 import lombok.val;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -59,16 +61,16 @@ public class UserServiceImpl implements UserService {
         this.repo = repo;
         this.configManager = configManager;
 
-        jwtKey = Keys.hmacShaKeyFor(configManager.getOrSummon(ConfType.JWT_KEY, true));
+        jwtKey = Keys.hmacShaKeyFor(configManager.getOrSummon(Configs.JWT_KEY, true));
         jwtParser = Jwts.parserBuilder().setSigningKey(jwtKey).build();
         this.cookiesManager = cookiesManager;
     }
 
-    private static String hashString(String string) {
+    private static @Nullable String hashString(@NotNull String str1, @NotNull Object str2) {
         try {
             val md = MessageDigest.getInstance("SHA-256");
-            md.update(string.getBytes());
-            md.digest();
+            md.update(str1.getBytes());
+            md.update(String.valueOf(str2).getBytes());
             return Tool.byte2hex(md.digest());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -76,13 +78,9 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private static String hashString(String str1, Object str2) {
-        return hashString(str1 + str2);
-    }
-
     @Override
     public LoginInfo login(@NonNull loginReq req) {
-        val range = configManager.getOrSummon(ConfType.LOGIN_TIME_RANGE, true);
+        val range = configManager.getOrSummon(Configs.LOGIN_TIME_RANGE, true);
         if (Math.abs(req.time() - System.currentTimeMillis()) > range) {
             //TODO 登录时间戳判断, 暂不启用
             // return LoginInfo.byErr(wrongTime);
@@ -97,14 +95,44 @@ public class UserServiceImpl implements UserService {
         return user.toLoginInfo();
     }
 
+    private static final String MSG_USER_EXISTS = "用户名已存在";
+    private static final String MSG_USER_BAD = "用户名数据错误";
+
     @Override
     public RegisterInfo register(@NonNull registerReq req) {
+
+        if (isInvalidUserName(req.username()))
+            return RegisterInfo.byErr(MSG_USER_BAD);
+
         User user = new User();
         user.setUsername(req.username());
         user.setPassword(req.password());
         user.setEmail(req.email());
-        user = repo.save(user);
+        user.setAdmin(true);//TODO dev
+
+        synchronized (this) {
+            if (repo.findByUsername(req.username()) != null)
+                return RegisterInfo.byErr(MSG_USER_EXISTS);
+
+            user = repo.save(user);
+        }
         return user.toRegisterInfo();
+    }
+
+    private boolean isInvalidUserName(String username) {
+        if (username.length() > configManager.getOrSummon(Configs.USERNAME_LENGTH, true))
+            return true;
+        boolean isNumber = true;
+        for (var i = 0; i < username.length(); i++) {
+            char c = username.charAt(i);
+            if (isNumber && (c < '0' || c > '9'))
+                isNumber = false;
+            if (c == '@')
+                return true;
+        }
+        if (isNumber)
+            return true;
+        return false;
     }
 
     /**
@@ -126,14 +154,16 @@ public class UserServiceImpl implements UserService {
      * @return 信息
      */
     @Override
-    public MyUserInfo infoMe(int id) {
+    public @NonNull MyUserInfo infoMe(Integer id) {
+        if (id == null)
+            return MyUserInfo.NOT_LOGIN;
         val user = repo.findById(id);
-        return user.map(MyUserInfo::fromDatabase).orElse(null);
+        return user.map(MyUserInfo::fromDatabase).orElse(MyUserInfo.NOT_LOGIN);
     }
 
     @Override
     public @NonNull String summonToken(int user) {
-        val exp = configManager.getOrSummon(ConfType.LOGIN_EXP, true);
+        val exp = configManager.getOrSummon(Configs.LOGIN_EXP, true);
         long time = System.currentTimeMillis();
 
         return Jwts.builder()//
@@ -147,7 +177,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public @NonNull Cookie summonTokenCookie(int user) {
         val cook = cookiesManager.cookie(CookiesManager.CookiesField.LOGIN, summonToken(user));
-        cook.setMaxAge((int)(configManager.getOrSummon(ConfType.LOGIN_EXP, true) / 1000));
+        cook.setMaxAge((int)(configManager.getOrSummon(Configs.LOGIN_EXP, true) / 1000));
         return cook;
     }
 
@@ -170,6 +200,21 @@ public class UserServiceImpl implements UserService {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean isAdmin(Integer user) {
+        if (user == null)
+            return false;
+        return repo.findById(user).map(User::isAdmin).orElse(false);
+    }
+
+    @Override
+    public void setVaptcha(SetVaptchaReq data) {
+        if (data.vid() != null)
+            configManager.setConfig(Configs.VAPTCHA_VID, data.vid());
+        if (data.key() != null)
+            configManager.setConfig(Configs.VAPTCHA_KEY, data.key());
     }
 
 }

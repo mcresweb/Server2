@@ -1,12 +1,14 @@
 package com.fei.mcresweb.controller;
 
-import com.fei.mcresweb.defs.ConfType;
+import com.fei.mcresweb.Tool;
 import com.fei.mcresweb.defs.ConfigManager;
+import com.fei.mcresweb.defs.Configs;
 import com.fei.mcresweb.defs.CookiesManager;
 import com.fei.mcresweb.restservice.user.*;
 import com.fei.mcresweb.service.UserService;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,7 +57,8 @@ public class UserController {
     @GetMapping("/salt")
     @ResponseBody
     public SaltInfo salt() {
-        return new SaltInfo(configManager.getOrSummon(ConfType.LOGIN_SALT, true), System.currentTimeMillis());
+        return new SaltInfo(configManager.getOrSummon(Configs.LOGIN_SALT, true), System.currentTimeMillis(),
+            configManager.getOrSummon(Configs.VAPTCHA_VID, true));
     }
 
     /**
@@ -102,8 +105,31 @@ public class UserController {
     @GetMapping("/me")
     @ResponseBody
     public MyUserInfo me(HttpServletRequest req) {
-        val id = service.getUserIdByCookie(req);
-        return id == null ? null : service.infoMe(id);
+        return service.infoMe(service.getUserIdByCookie(req));
+    }
+
+    /**
+     * 查询自己用户信息的接口
+     *
+     * @return 用户信息
+     */
+    @GetMapping("/vaptcha")
+    @ResponseBody
+    public String vaptcha() {
+        if (Tool.valid(configManager.getOrSummon(Configs.VAPTCHA_KEY, true)))
+            return configManager.getOrSummon(Configs.VAPTCHA_VID, true);
+        return "";
+    }
+
+    /**
+     * 查询自己用户信息的接口
+     */
+    @PostMapping("/vaptcha")
+    @ResponseStatus(HttpStatus.OK)
+    public void setVaptcha(HttpServletRequest req, @RequestBody UserService.SetVaptchaReq data) {
+        if (!service.isAdmin(service.getUserIdByCookie(req)))
+            return;
+        service.setVaptcha(data);
     }
 
 }

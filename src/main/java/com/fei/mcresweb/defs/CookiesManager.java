@@ -17,7 +17,7 @@ public class CookiesManager {
     final String[] keys;
 
     public CookiesManager(ConfigManager configManager) {
-        var prefix = configManager.getOrSummon(ConfType.STR_PREFIX, true);
+        var prefix = configManager.getOrSummon(Configs.STR_PREFIX, true);
         keys = Arrays.stream(CookiesField.values())//
             .map(CookiesField::name)//
             .map(String::toLowerCase)//
@@ -49,9 +49,10 @@ public class CookiesManager {
         return cook;
     }
 
+    /**
+     * 所有的 Cookie
+     */
     public enum CookiesField {
         LOGIN;
-        private String cache;
-
     }
 }

@@ -48,8 +48,7 @@ public interface UserService {
      * @param id 用户ID
      * @return 信息
      */
-    @Nullable
-    MyUserInfo infoMe(int id);
+    @NonNull MyUserInfo infoMe(Integer id);
 
     /**
      * 生成登录令牌
@@ -86,6 +85,22 @@ public interface UserService {
     Integer getUserIdByCookie(@NonNull HttpServletRequest req);
 
     /**
+     * 判断用户是否是管理员
+     *
+     * @param user 用户
+     * @return 是否是管理员
+     */
+    @Contract("null->false")
+    boolean isAdmin(Integer user);
+
+    /**
+     * 设置验证码数据
+     *
+     * @param data 数据
+     */
+    void setVaptcha(SetVaptchaReq data);
+
+    /**
      * 登录请求
      *
      * @param username 用户名
@@ -106,4 +121,15 @@ public interface UserService {
     record registerReq(@NonNull String username, @NonNull String password, @NonNull String email,
                        @NonNull String code) {
     }
+
+    /**
+     * 设置验证码请求
+     *
+     * @param vid vid
+     * @param key key
+     */
+    record SetVaptchaReq(String vid, String key) {
+    }
+
+    ;
 }

@@ -20,15 +20,21 @@ import javax.persistence.Table;
 public class Config {
     @Id
     @NonNull
-    @Column(name = "type", nullable = false)
-    String type;
+    @Column(name = "type", nullable = false, updatable = false)
+    private String type;
     @Setter
     @Getter
     @Column(name = "value", nullable = false, columnDefinition = "BLOB")
     private byte @NonNull [] value;
 
+    @Getter
+    @NonNull
+    @Column(name = "clazz", nullable = false, updatable = false)
+    private String clazz = "";
+
     public Config(@NonNull ConfType<?> ct) {
         type = ct.getName();
+        clazz = ct.getDataType().getName();
     }
 
     public ConfType<?> getType() {

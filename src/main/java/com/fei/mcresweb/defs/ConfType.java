@@ -8,11 +8,9 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * 配置文件类型
@@ -20,7 +18,6 @@ import java.util.Random;
 @Getter
 @ToString
 public abstract class ConfType<T> {
-
     /**
      * 所有类型
      */
@@ -29,10 +26,13 @@ public abstract class ConfType<T> {
      * 所有类型
      */
     public static final Map<String, ConfType<?>> ALL_TYPES_VIEW = Collections.unmodifiableMap(ALL_TYPES);
-    /**
-     * 任意数据的前缀
-     */
-    public static final ConfType<String> STR_PREFIX = new ConfType<>("string_prefix", String.class) {
+
+    static abstract class ConfTypeString extends ConfType<String> {
+
+        ConfTypeString(@NonNull String name) {
+            super(name, String.class);
+        }
+
         @Override
         public String getData(@NonNull Config conf) {
             return cache = new String(conf.getValue(), StandardCharsets.UTF_8);
@@ -43,19 +43,13 @@ public abstract class ConfType<T> {
             conf.setValue(data.getBytes(StandardCharsets.UTF_8));
         }
 
-        @Override
-        public @NonNull String summon() {
-            return String.format("MRW-%s-", Long.toUnsignedString(new Random().nextLong(), Character.MAX_RADIX));
-        }
-    };
+    }
 
-    /**
-     * 登录有效期
-     */
-    public static final ConfType<Long> LOGIN_EXP = new ConfType<Long>("jwt_expired", Long.class) {
-        /**有效期(ms)*/
-        @SuppressWarnings("FieldCanBeLocal")
-        private final long exp = 1000 * 60 * 60 * 24 * 7 - 1;
+    static abstract class ConfTypeLong extends ConfType<Long> {
+
+        ConfTypeLong(@NonNull String name) {
+            super(name, Long.class);
+        }
 
         @Override
         public Long getData(@NonNull Config conf) {
@@ -67,18 +61,15 @@ public abstract class ConfType<T> {
             conf.setValue(writeLong(cache = data));
         }
 
-        @Override
-        public @NonNull Long summon() {
-            return exp;
-        }
-
-        public long readLong(byte[] readBuffer) {
+        @Contract(pure = true)
+        protected long readLong(byte @NotNull [] readBuffer) {
             return (((long)readBuffer[0] << 56) + ((long)(readBuffer[1] & 255) << 48) + ((long)(readBuffer[2] & 255)
                 << 40) + ((long)(readBuffer[3] & 255) << 32) + ((long)(readBuffer[4] & 255) << 24) + (
                 (readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255)));
         }
 
-        public byte[] writeLong(long v) {
+        @Contract(pure = true)
+        protected byte @NotNull [] writeLong(long v) {
             byte[] writeBuffer = new byte[8];
             writeBuffer[0] = (byte)(v >>> 56);
             writeBuffer[1] = (byte)(v >>> 48);
@@ -90,59 +81,45 @@ public abstract class ConfType<T> {
             writeBuffer[7] = (byte)(v);
             return writeBuffer;
         }
-    };
-    /**
-     * 登录时间戳范围
-     */
-    public static final ConfType<Long> LOGIN_TIME_RANGE = new ConfType<Long>("login_time_range", Long.class) {
-        /**有效期(ms)*/
-        @SuppressWarnings("FieldCanBeLocal")
-        private final long exp = 1000 * 60;
+    }
 
-        @Override
-        public Long getData(@NonNull Config conf) {
-            return cache = readLong(conf.getValue());
+    static abstract class ConfTypeInt extends ConfType<Integer> {
+
+        ConfTypeInt(@NonNull String name) {
+            super(name, Integer.class);
         }
 
         @Override
-        public void setByte(@NonNull Config conf, @NonNull Long data) {
-            conf.setValue(writeLong(cache = data));
+        public Integer getData(@NonNull Config conf) {
+            return cache = readInt(conf.getValue());
         }
 
         @Override
-        public @NonNull Long summon() {
-            return exp;
+        public void setByte(@NonNull Config conf, @NonNull Integer data) {
+            conf.setValue(writeInt(cache = data));
         }
 
         @Contract(pure = true)
-        public long readLong(byte @NotNull [] readBuffer) {
-            return (((long)readBuffer[0] << 56) + ((long)(readBuffer[1] & 255) << 48) + ((long)(readBuffer[2] & 255)
-                << 40) + ((long)(readBuffer[3] & 255) << 32) + ((long)(readBuffer[4] & 255) << 24) + (
-                (readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255)));
+        protected int readInt(byte @NotNull [] readBuffer) {
+            return ((readBuffer[0] << 24) + (readBuffer[1] << 16) + (readBuffer[2] << 8) + (readBuffer[3]));
         }
 
         @Contract(pure = true)
-        public byte @NotNull [] writeLong(long v) {
+        protected byte @NotNull [] writeInt(int v) {
             byte[] writeBuffer = new byte[8];
-            writeBuffer[0] = (byte)(v >>> 56);
-            writeBuffer[1] = (byte)(v >>> 48);
-            writeBuffer[2] = (byte)(v >>> 40);
-            writeBuffer[3] = (byte)(v >>> 32);
-            writeBuffer[4] = (byte)(v >>> 24);
-            writeBuffer[5] = (byte)(v >>> 16);
-            writeBuffer[6] = (byte)(v >>> 8);
-            writeBuffer[7] = (byte)(v);
+            writeBuffer[0] = (byte)(v >>> 24);
+            writeBuffer[1] = (byte)(v >>> 16);
+            writeBuffer[2] = (byte)(v >>> 8);
+            writeBuffer[3] = (byte)(v);
             return writeBuffer;
         }
-    };
-    /**
-     * JWT私钥
-     */
-    public static final ConfType<byte[]> JWT_KEY = new ConfType<>("jwt_private_key", byte[].class) {
+    }
 
-        /**密钥长度*/
-        @SuppressWarnings("FieldCanBeLocal")
-        private final int len = 1024;
+    static abstract class ConfTypeByteArr extends ConfType<byte[]> {
+
+        ConfTypeByteArr(@NonNull String name) {
+            super(name, byte[].class);
+        }
 
         @Override
         public byte[] getData(@NonNull Config conf) {
@@ -150,50 +127,26 @@ public abstract class ConfType<T> {
         }
 
         @Override
-        public synchronized void setByte(@NonNull Config conf, byte @NotNull [] data) {
+        public void setByte(@NonNull Config conf, byte @NonNull [] data) {
             conf.setValue(cache = data);
         }
+    }
 
-        @Override
-        public byte @NonNull [] summon() {
-            byte[] data = new byte[len];
-            new SecureRandom().nextBytes(data);
-            return data;
-        }
-
-    };
-    /**
-     * 公共salt
-     */
-    public static final ConfType<String> LOGIN_SALT = new ConfType<>("public_salt", String.class) {
-        @Override
-        public String getData(@NonNull Config conf) {
-            return cache = new String(conf.getValue(), StandardCharsets.UTF_8);
-        }
-
-        @Override
-        public void setByte(@NonNull Config conf, @NonNull String data) {
-            conf.setValue(data.getBytes(StandardCharsets.UTF_8));
-        }
-
-        @Override
-        public @NonNull String summon() {
-            return Long.toUnsignedString(new Random().nextLong(), Character.MAX_RADIX);
-        }
-    };
     /**
      * 此配置项的名称
      */
     @ToString.Include
+    @NonNull
     private final String name;
     /**
      * 此配置项的数据类型
      */
+    @NonNull
     private final Class<T> dataType;
     @Getter
     protected T cache;
 
-    private ConfType(String name, Class<T> dataType) {
+    private ConfType(@NonNull String name, @NonNull Class<T> dataType) {
         this.name = name;
         this.dataType = dataType;
         synchronized (ALL_TYPES) {

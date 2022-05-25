@@ -125,6 +125,8 @@ public class ContentServiceImpl implements ContentService {
         try {
             if (data.isCU()) {
                 val info = new Catalogue();
+                if (data.index() != null)
+                    info.setIndex(data.index());
                 info.setTitle(data.name());
                 info.setKey(data.key());
                 info.setImgID(data.img());
@@ -153,7 +155,8 @@ public class ContentServiceImpl implements ContentService {
                 info.setCatalogueKey(data.catalogue());
                 info.setKey(data.key());
                 info.setTitle(data.name());
-                info.setIndex(data.index());
+                if (data.index() != null)
+                    info.setIndex(data.index());
                 info.setImgID(data.img());
                 categoryDao.save(info);
                 return ModResp.SUCCESS;

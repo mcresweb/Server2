@@ -33,7 +33,7 @@ public class Img {
      * 原始图片
      */
     @Basic(fetch = FetchType.LAZY)
-    @Column(columnDefinition = "LONGBLOB", nullable = false)
+    @Column(columnDefinition = "LONGBLOB")
     @Comment("原始图片")
     @ToString.Exclude
     byte[] img;
@@ -42,7 +42,7 @@ public class Img {
      * 略缩图片
      */
     @Basic(fetch = FetchType.LAZY)
-    @Column(columnDefinition = "BLOB", nullable = false)
+    @Column(columnDefinition = "BLOB")
     @Comment("略缩图片")
     @ToString.Exclude
     byte[] thu;

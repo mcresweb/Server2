@@ -17,5 +17,16 @@ public class SaltInfo {
     /**
      * 服务器当前时间
      */
-    long time;
+    @NonNull String time;
+
+    /**
+     * 验证码VID
+     */
+    @NonNull String vaptcha;
+
+    public SaltInfo(@NonNull String salt, long time, String vaptcha) {
+        this.salt = salt;
+        this.time = Long.toString(time);
+        this.vaptcha = vaptcha == null ? "" : vaptcha;
+    }
 }

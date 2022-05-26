@@ -121,7 +121,7 @@ public class Essay {
      * 内容文章
      */
     @NonNull
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "MEDIUMTEXT")
     @Comment("内容文章")
     String content;
 

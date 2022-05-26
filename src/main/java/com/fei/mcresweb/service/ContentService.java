@@ -140,8 +140,8 @@ public interface ContentService {
      * @param tags        标签
      */
     record UploadEssay(@NonNull String catalogue, @NonNull String category, @NonNull String title,
-                       @NonNull Collection<UUID> imgs, @NonNull String content, @NonNull String type,
-                       String description, Collection<String> tags) {
+                       Collection<UUID> imgs, @NonNull String content, @NonNull String type, String description,
+                       Collection<String> tags) {
     }
 
 }

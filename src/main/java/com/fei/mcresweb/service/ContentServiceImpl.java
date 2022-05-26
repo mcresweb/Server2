@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -182,20 +183,21 @@ public class ContentServiceImpl implements ContentService {
             return UploadResp.byErr(MSG_NOT_FOUND_CATALOGUE);
         if (!withCache(() -> cache_category.get(data.catalogue()).containsKey(data.category())))
             return UploadResp.byErr(MSG_NOT_FOUND_CATEGORY);
-        for (val tag : data.tags())
-            if (tag.contains(","))
-                return UploadResp.byErr(MSG_BAD_DATA);
+        if (data.tags() != null)
+            for (val tag : data.tags())
+                if (tag.contains(","))
+                    return UploadResp.byErr(MSG_BAD_DATA);
 
         var essay = new Essay();
         essay.setCatalogueKey(data.catalogue());
         essay.setCategoryKey(data.category());
         essay.setSenderID(user);
         essay.setTitle(data.title());
-        essay.setImg(data.imgs());
+        essay.setImg(data.imgs() == null ? Collections.emptyList() : data.imgs());
         essay.setContent(data.content());
         essay.setType(data.type());
         essay.setDescription(data.description());
-        essay.setTags(String.join(",", data.tags()));
+        essay.setTags(data.tags() == null ? null : String.join(",", data.tags()));
         try {
             essay = essayDao.save(essay);
             return UploadResp.byId(essay.getId());

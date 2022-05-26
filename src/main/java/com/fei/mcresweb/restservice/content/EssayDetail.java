@@ -10,21 +10,21 @@ import java.util.UUID;
 /**
  * 内容详细信息
  *
- * @param id           内容ID
- * @param catalogueKey 大分类
- * @param categoryKey  小分类
- * @param sender       发布者ID
- * @param title        内容标题
- * @param star         评分
- * @param starAmount   评分人数
- * @param download     下载数
- * @param img          图片
- * @param content      文章
- * @param type         类型
- * @param tags         标签
- * @param description  简略描述
+ * @param id          内容ID
+ * @param catalogue   大分类
+ * @param category    小分类
+ * @param sender      发布者ID
+ * @param title       内容标题
+ * @param star        评分
+ * @param starAmount  评分人数
+ * @param download    下载数
+ * @param img         图片
+ * @param content     文章
+ * @param type        类型
+ * @param tags        标签
+ * @param description 简略描述
  */
-public record EssayDetail(int id, @NonNull String catalogueKey, @NonNull String categoryKey, int sender,
+public record EssayDetail(int id, @NonNull String catalogue, @NonNull String category, int sender,
                           @NonNull String title, Double star, long starAmount, long download,
                           @NonNull Collection<UUID> img, @NonNull String content, @NonNull String type,
                           Collection<String> tags, String description) {

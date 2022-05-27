@@ -6,6 +6,7 @@ import lombok.NonNull;
 import lombok.val;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -204,5 +205,11 @@ public class ContentServiceImpl implements ContentService {
         } catch (DataAccessException e) {
             return UploadResp.byErr(MSG_BAD_DATA);
         }
+    }
+
+    @Override
+    @Nullable
+    public Integer randomEssayId() {
+        return essayDao.getRandomEssay();
     }
 }

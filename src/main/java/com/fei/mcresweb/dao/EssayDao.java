@@ -3,7 +3,9 @@ package com.fei.mcresweb.dao;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.lang.Nullable;
 
 /**
  * 内容
@@ -19,4 +21,13 @@ public interface EssayDao extends CrudRepository<Essay, Integer> {
      */
     Page<Essay> findByCatalogueKeyEqualsAndCategoryKeyEquals(@NonNull String catalogueKey, @NonNull String categoryKey,
         Pageable pageable);
+
+    /**
+     * 随机获取一个内容ID
+     *
+     * @return essay id
+     */
+    @Query(value = "SELECT`id`FROM`essay`WHERE`id`>=rand()*(SELECT max(id)FROM`essay`)LIMIT 1;", nativeQuery = true)
+    @Nullable
+    Integer getRandomEssay();
 }

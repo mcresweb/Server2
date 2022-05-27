@@ -3,6 +3,7 @@ package com.fei.mcresweb.controller;
 import com.fei.mcresweb.restservice.content.*;
 import com.fei.mcresweb.service.ContentService;
 import com.fei.mcresweb.service.UserService;
+import lombok.val;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,6 +69,18 @@ public class ContentController {
     @ResponseBody
     public EssayDetail essay(@RequestParam("id") int id) {
         return service.essay(id);
+    }
+
+    /**
+     * 获取内容详细信息的接口
+     *
+     * @return 详细信息
+     */
+    @GetMapping("/random-essay")
+    @ResponseBody
+    public EssayDetail randomEssay() {
+        val id = service.randomEssayId();
+        return id == null ? null : essay(id);
     }
 
     /**

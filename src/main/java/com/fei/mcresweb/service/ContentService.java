@@ -74,6 +74,14 @@ public interface ContentService {
     @NonNull UploadResp<Integer> uploadEssay(Integer user, UploadEssay essay);
 
     /**
+     * 随机返回一个内容id
+     *
+     * @return 内容id
+     */
+    @Nullable
+    Integer randomEssayId();
+
+    /**
      * @param key   唯一标识
      * @param name  名称
      * @param index 排序用ID

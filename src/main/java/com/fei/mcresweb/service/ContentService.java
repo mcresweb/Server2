@@ -6,6 +6,7 @@ import lombok.NonNull;
 import org.springframework.lang.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -141,15 +142,23 @@ public interface ContentService {
      * @param catalogue   大分类
      * @param category    小分类
      * @param title       内容标题
-     * @param imgs        介绍图片
+     * @param imgs        帖子图片
      * @param content     内容文章
      * @param type        内容文章的类型
      * @param description 内容描述
      * @param tags        标签
      */
     record UploadEssay(@NonNull String catalogue, @NonNull String category, @NonNull String title,
-                       Collection<UUID> imgs, @NonNull String content, @NonNull String type, String description,
+                       Map<UUID, ImgUsing> imgs, @NonNull String content, @NonNull String type, String description,
                        Collection<String> tags) {
     }
 
+    /**
+     * 使用方式
+     *
+     * @param head 是否显示在头部
+     * @param list 是否显示在内容列表
+     */
+    record ImgUsing(boolean head, boolean list) {
+    }
 }

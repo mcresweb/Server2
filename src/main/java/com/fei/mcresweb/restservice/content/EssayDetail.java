@@ -18,7 +18,7 @@ import java.util.UUID;
  * @param star        评分
  * @param starAmount  评分人数
  * @param download    下载数
- * @param img         图片
+ * @param imgs        图片
  * @param content     文章
  * @param type        类型
  * @param tags        标签
@@ -26,11 +26,11 @@ import java.util.UUID;
  */
 public record EssayDetail(int id, @NonNull String catalogue, @NonNull String category, int sender,
                           @NonNull String title, Double star, long starAmount, long download,
-                          @NonNull Collection<UUID> img, @NonNull String content, @NonNull String type,
+                          @NonNull Collection<UUID> imgs, @NonNull String content, @NonNull String type,
                           Collection<String> tags, String description) {
     public EssayDetail(@NonNull Essay essay) {
         this(essay.getId(), essay.getCatalogueKey(), essay.getCategoryKey(), essay.getSenderID(), essay.getTitle(),
-            essay.getStar(), essay.getStarAmount(), essay.getDownload(), essay.getImg(), essay.getContent(),
+            essay.getStar(), essay.getStarAmount(), essay.getDownload(), essay.getImgUUID(), essay.getContent(),
             essay.getType(), essay.getTags() == null ? null : Arrays.asList(essay.getTags().split(",")),
             essay.getDescription());
     }

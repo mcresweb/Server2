@@ -6,6 +6,7 @@ import org.hibernate.Hibernate;
 import org.hibernate.annotations.Comment;
 
 import javax.persistence.*;
+import java.sql.Blob;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -36,7 +37,8 @@ public class Img {
     @Column(columnDefinition = "LONGBLOB")
     @Comment("原始图片")
     @ToString.Exclude
-    byte[] img;
+    @Lob
+    Blob img;
 
     /**
      * 略缩图片
@@ -45,7 +47,8 @@ public class Img {
     @Column(columnDefinition = "BLOB")
     @Comment("略缩图片")
     @ToString.Exclude
-    byte[] thu;
+    @Lob
+    Blob thu;
 
     @Override
     public boolean equals(Object o) {

@@ -1,5 +1,6 @@
 package com.fei.mcresweb.dao;
 
+import com.fei.mcresweb.service.ContentService;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.Hibernate;
@@ -37,6 +38,18 @@ public class EssayImgs {
      */
     @Column(nullable = false, name = "essay_id")
     int essayId;
+
+    /**
+     * 是否要在头部显示
+     */
+    @Column(nullable = false)
+    boolean showInHead = false;
+    /**
+     * 是否要在内容列表显示
+     */
+    @Column(nullable = false)
+    boolean showInList = false;
+
     /**
      * 图片
      */
@@ -54,9 +67,11 @@ public class EssayImgs {
     @Column(nullable = false, name = "img_id", columnDefinition = "BINARY(16)")
     UUID imgId;
 
-    public EssayImgs(int essayId, @NonNull UUID imgId) {
+    public EssayImgs(int essayId, @NonNull UUID imgId, @NonNull ContentService.ImgUsing type) {
         setEssayId(essayId);
         setImgId(imgId);
+        setShowInHead(type.head());
+        setShowInList(type.list());
     }
 
     @Override

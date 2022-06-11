@@ -1,5 +1,6 @@
 package com.fei.mcresweb.dao;
 
+import com.fei.mcresweb.service.ContentService;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.Hibernate;
@@ -175,11 +176,12 @@ public class Essay {
     /**
      * @return 所有图片UUID
      */
-    public List<UUID> getImg() {
+    public List<UUID> getImgUUID() {
         return img.stream().map(EssayImgs::getImgId).toList();
     }
 
-    public void setImg(@NonNull Collection<UUID> imgs) {
-        this.img = imgs.stream().map(uuid -> new EssayImgs(getId(), uuid)).collect(Collectors.toSet());
+    public void setImg(@NonNull Map<UUID, ContentService.ImgUsing> imgs) {
+        this.img = imgs.entrySet().stream().map(e -> new EssayImgs(getId(), e.getKey(), e.getValue()))
+            .collect(Collectors.toSet());
     }
 }

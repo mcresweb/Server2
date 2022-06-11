@@ -3,9 +3,11 @@ package com.fei.mcresweb.service;
 import com.fei.mcresweb.restservice.img.UploadResp;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Blob;
+import java.util.UUID;
 
 /**
  * 图片服务
@@ -18,5 +20,13 @@ public interface ImgService {
      * @param file 上传的文件
      * @return 上传结果
      */
-    @NotNull UploadResp uploadImg(Integer user, @NonNull MultipartFile file) throws IOException;
+    @NotNull UploadResp uploadImg(Integer user, @NonNull InputStream file, long length) throws IOException;
+
+    /**
+     * 获取图片数据(原始)
+     *
+     * @param uuid 图片UUID
+     * @return 图片数据
+     */
+    Blob getImg(UUID uuid);
 }

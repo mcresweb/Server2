@@ -21,7 +21,7 @@ public class EssayImgsPK implements Serializable {
     @Id
     private int essayId;
 
-    @Column(name = "img_id", insertable = false, updatable = false)
+    @Column(name = "img_id", insertable = false, updatable = false, columnDefinition = "BINARY(16)")
     @Id
     private UUID imgId;
 }

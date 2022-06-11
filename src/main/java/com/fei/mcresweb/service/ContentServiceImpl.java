@@ -26,18 +26,24 @@ public class ContentServiceImpl implements ContentService {
     private static final String MSG_NOT_FOUND_CATALOGUE = "未找到大分类!";
     private static final String MSG_NOT_FOUND_CATEGORY = "未找到小分类!";
     private static final String MSG_NOT_LOGIN = "未登录";
+    private static final String MSG_NOT_ADMIN = "非管理员";
     private static final String MSG_BAD_DATA = "错误数据";
     private final CatalogueDao catalogueDao;
     private final CategoryDao categoryDao;
     private final EssayDao essayDao;
+    private final EssayImgsDao essayImgsDao;
+    private final UserDao userDao;
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<String, CatalogueInfo> cache_catalogue;
     private Map<String, LinkedHashMap<String, CategoryInfo>> cache_category;
 
-    public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, EssayDao essayDao) {
+    public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, EssayDao essayDao,
+        EssayImgsDao essayImgsDao, UserDao userDao) {
         this.catalogueDao = catalogueDao;
         this.categoryDao = categoryDao;
         this.essayDao = essayDao;
+        this.essayImgsDao = essayImgsDao;
+        this.userDao = userDao;
 
         withCache(() -> 0);
     }
@@ -180,6 +186,8 @@ public class ContentServiceImpl implements ContentService {
     public @NonNull UploadResp<Integer> uploadEssay(Integer user, UploadEssay data) {
         if (user == null)
             return UploadResp.byErr(MSG_NOT_LOGIN);
+        if (!userDao.findById(user).map(User::isAdmin).orElse(false))
+            return UploadResp.byErr(MSG_NOT_ADMIN);
         if (!withCache(() -> cache_category.containsKey(data.catalogue())))
             return UploadResp.byErr(MSG_NOT_FOUND_CATALOGUE);
         if (!withCache(() -> cache_category.get(data.catalogue()).containsKey(data.category())))
@@ -194,13 +202,15 @@ public class ContentServiceImpl implements ContentService {
         essay.setCategoryKey(data.category());
         essay.setSenderID(user);
         essay.setTitle(data.title());
-        essay.setImg(data.imgs() == null ? Collections.emptyList() : data.imgs());
         essay.setContent(data.content());
         essay.setType(data.type());
         essay.setDescription(data.description());
         essay.setTags(data.tags() == null ? null : String.join(",", data.tags()));
         try {
             essay = essayDao.save(essay);
+            essay.setImg(data.imgs() == null ? Collections.emptyMap() : data.imgs());
+            System.out.println(essay.getImg());
+            essayImgsDao.saveAll(essay.getImg());
             return UploadResp.byId(essay.getId());
         } catch (DataAccessException e) {
             return UploadResp.byErr(MSG_BAD_DATA);

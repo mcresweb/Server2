@@ -1,6 +1,7 @@
 package com.fei.mcresweb.restservice.content;
 
 import com.fei.mcresweb.dao.Essay;
+import com.fei.mcresweb.dao.EssayImgs;
 import lombok.NonNull;
 
 import java.util.Arrays;
@@ -30,8 +31,9 @@ public record EssayDetail(int id, @NonNull String catalogue, @NonNull String cat
                           Collection<String> tags, String description) {
     public EssayDetail(@NonNull Essay essay) {
         this(essay.getId(), essay.getCatalogueKey(), essay.getCategoryKey(), essay.getSenderID(), essay.getTitle(),
-            essay.getStar(), essay.getStarAmount(), essay.getDownload(), essay.getImgUUID(), essay.getContent(),
-            essay.getType(), essay.getTags() == null ? null : Arrays.asList(essay.getTags().split(",")),
-            essay.getDescription());
+            essay.getStar(), essay.getStarAmount(), essay.getDownload(),
+            essay.getImg().stream().filter(EssayImgs::isShowInList).map(EssayImgs::getImgId).toList(),
+            essay.getContent(), essay.getType(),
+            essay.getTags() == null ? null : Arrays.asList(essay.getTags().split(",")), essay.getDescription());
     }
 }

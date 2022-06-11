@@ -163,14 +163,15 @@ public class Essay {
     }
 
     /**
-     * @return 任意一个图片uuid
+     * @return 任意一个头部图片uuid
      */
     @Nullable
-    public UUID getAnyImg() {
-        val itr = img.iterator();
-        if (itr.hasNext())
-            return itr.next().getImgId();
-        return null;
+    public UUID getAnyHeadImg() {
+        return img.stream()//
+            .filter(EssayImgs::isShowInHead)//
+            .map(EssayImgs::getImgId)//
+            .findAny()//
+            .orElse(null);
     }
 
     /**

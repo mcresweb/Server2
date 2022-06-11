@@ -209,7 +209,6 @@ public class ContentServiceImpl implements ContentService {
         try {
             essay = essayDao.save(essay);
             essay.setImg(data.imgs() == null ? Collections.emptyMap() : data.imgs());
-            System.out.println(essay.getImg());
             essayImgsDao.saveAll(essay.getImg());
             return UploadResp.byId(essay.getId());
         } catch (DataAccessException e) {

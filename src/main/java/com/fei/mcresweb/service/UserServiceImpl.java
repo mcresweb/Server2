@@ -194,7 +194,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public Integer getUserIdByCookie(@NonNull HttpServletRequest req) {
         val key = cookiesManager.key(CookiesManager.CookiesField.LOGIN);
-        for (val cook : req.getCookies()) {
+        val cookies = req.getCookies();
+        if (cookies == null)
+            return null;
+        for (val cook : cookies) {
             if (key.equalsIgnoreCase(cook.getName())) {
                 return checkToken(cook.getValue());
             }
@@ -215,6 +218,13 @@ public class UserServiceImpl implements UserService {
             configManager.setConfig(Configs.VAPTCHA_VID, data.vid());
         if (data.key() != null)
             configManager.setConfig(Configs.VAPTCHA_KEY, data.key());
+    }
+
+    @Override
+    public boolean isVip(Integer user, boolean real) {
+        if (user == null)
+            return false;
+        return repo.findById(user).map(u -> u.isVip() || (!real && u.isAdmin())).orElse(false);
     }
 
 }

@@ -101,6 +101,27 @@ public interface UserService {
     void setVaptcha(SetVaptchaReq data);
 
     /**
+     * 判断用户是否是VIP / 管理员
+     *
+     * @param user 用户
+     * @return 是否是VIP
+     */
+    @Contract("null->false")
+    default boolean isVip(Integer user) {
+        return isVip(user, false);
+    }
+
+    /**
+     * 判断用户是否是VIP
+     *
+     * @param user 用户
+     * @param real 是否真实判断(为false时用户是管理员也被当做VIP)
+     * @return 是否是VIP
+     */
+    @Contract("null,_->false")
+    boolean isVip(Integer user, boolean real);
+
+    /**
      * 登录请求
      *
      * @param username 用户名

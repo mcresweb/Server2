@@ -4,15 +4,15 @@ import com.fei.mcresweb.dao.*;
 import com.fei.mcresweb.restservice.content.*;
 import lombok.NonNull;
 import lombok.val;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
@@ -25,24 +25,31 @@ import java.util.stream.Collectors;
 public class ContentServiceImpl implements ContentService {
     private static final String MSG_NOT_FOUND_CATALOGUE = "未找到大分类!";
     private static final String MSG_NOT_FOUND_CATEGORY = "未找到小分类!";
+    private static final String MSG_NOT_FOUND_ESSAY = "未找到帖子!";
     private static final String MSG_NOT_LOGIN = "未登录";
     private static final String MSG_NOT_ADMIN = "非管理员";
     private static final String MSG_BAD_DATA = "错误数据";
+
     private final CatalogueDao catalogueDao;
     private final CategoryDao categoryDao;
     private final EssayDao essayDao;
     private final EssayImgsDao essayImgsDao;
+    private final EssayFileDao essayFileDao;
+    private final EssayFileInfoDao essayFileInfoDao;
     private final UserDao userDao;
+
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<String, CatalogueInfo> cache_catalogue;
     private Map<String, LinkedHashMap<String, CategoryInfo>> cache_category;
 
     public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, EssayDao essayDao,
-        EssayImgsDao essayImgsDao, UserDao userDao) {
+        EssayImgsDao essayImgsDao, EssayFileDao essayFileDao, EssayFileInfoDao essayFileInfoDao, UserDao userDao) {
         this.catalogueDao = catalogueDao;
         this.categoryDao = categoryDao;
         this.essayDao = essayDao;
         this.essayImgsDao = essayImgsDao;
+        this.essayFileDao = essayFileDao;
+        this.essayFileInfoDao = essayFileInfoDao;
         this.userDao = userDao;
 
         withCache(() -> 0);
@@ -220,5 +227,56 @@ public class ContentServiceImpl implements ContentService {
     @Nullable
     public Integer randomEssayId() {
         return essayDao.getRandomEssay();
+    }
+
+    @Override
+    public UploadResp<Collection<UUID>> uploadFile(Integer user, int id, MultipartFile[] files) {
+        if (user == null)
+            return UploadResp.byErr(MSG_NOT_LOGIN);
+        if (!userDao.findById(user).map(User::isAdmin).orElse(false))
+            return UploadResp.byErr(MSG_NOT_ADMIN);
+
+        if (!essayDao.existsById(id))
+            return UploadResp.byErr(MSG_BAD_DATA);
+
+        Collection<UUID> uuids = new ArrayList<>();
+        for (val file : files) {
+            val pk = new EssayFileInfoPK(id, UUID.randomUUID());
+            essayFileDao.saveFile(pk, file);
+            val info = new EssayFileInfo();
+            info.setFileId(pk.getFileId());
+            info.setEssayId(id);
+            info.setName(file.getOriginalFilename());
+            info.setSize(essayFileDao.getFileSize(pk));
+            info.setSha1(essayFileDao.getFileSha1(pk));
+            info.setUploaderID(user);
+            essayFileInfoDao.save(info);
+            uuids.add(info.getFileId());
+        }
+
+        return UploadResp.byId(uuids);
+    }
+
+    @Override
+    public @NotNull FileListResp listFile(Integer user, int essay) {
+        if (user == null)
+            return FileListResp.byErr(MSG_NOT_LOGIN);
+        val list = essayFileInfoDao.findAllByEssayIdEquals(essay);
+        if (list == null)
+            return FileListResp.byErr(MSG_NOT_FOUND_ESSAY);
+
+        return FileListResp.byDbList(list);
+    }
+
+    @Override
+    public FileSystemResource getFile(int essay, UUID file) {
+        val path = essayFileDao.getFileResource(new EssayFileInfoPK(essay, file));
+        return path == null ? null : new FileSystemResource(path);
+    }
+
+    @Override
+    public FileInfo getFileInfo(int essay, UUID file) {
+        val info = essayFileInfoDao.findById(new EssayFileInfoPK(essay, file));
+        return info.map(FileInfo::new).orElse(null);
     }
 }

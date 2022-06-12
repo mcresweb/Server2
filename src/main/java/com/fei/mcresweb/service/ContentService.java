@@ -3,7 +3,9 @@ package com.fei.mcresweb.service;
 import com.fei.mcresweb.Tool;
 import com.fei.mcresweb.restservice.content.*;
 import lombok.NonNull;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.lang.Nullable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
 import java.util.Map;
@@ -81,6 +83,45 @@ public interface ContentService {
      */
     @Nullable
     Integer randomEssayId();
+
+    /**
+     * 上传资源文件
+     *
+     * @param user  上传者
+     * @param id    内容ID
+     * @param files 文件
+     * @return 上传结果
+     */
+    UploadResp<Collection<UUID>> uploadFile(Integer user, int id, MultipartFile[] files);
+
+    /**
+     * 列出文件列表
+     *
+     * @param user  查询者
+     * @param essay 内容ID
+     * @return 文件列表
+     */
+    @NonNull FileListResp listFile(Integer user, int essay);
+
+    /**
+     * 获取资源文件
+     *
+     * @param essay 内容ID
+     * @param file  文件ID
+     * @return 文件资源
+     */
+    @Nullable
+    FileSystemResource getFile(int essay, UUID file);
+
+    /**
+     * 获取资源文件信息
+     *
+     * @param essay 内容ID
+     * @param file  文件ID
+     * @return 文件信息
+     */
+    @Nullable
+    FileInfo getFileInfo(int essay, UUID file);
 
     /**
      * @param key   唯一标识

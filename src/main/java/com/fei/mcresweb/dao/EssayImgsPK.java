@@ -3,6 +3,7 @@ package com.fei.mcresweb.dao;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -19,9 +20,11 @@ import java.util.UUID;
 public class EssayImgsPK implements Serializable {
     @Column(name = "essay_id", insertable = false, updatable = false)
     @Id
+    @Comment("内容ID")
     private int essayId;
 
     @Column(name = "img_id", insertable = false, updatable = false, columnDefinition = "BINARY(16)")
     @Id
+    @Comment("图片UUID")
     private UUID imgId;
 }

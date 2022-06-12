@@ -31,7 +31,6 @@ public class EssayImgs {
     @JoinColumn(nullable = false, name = "essay_id", insertable = false, updatable = false)
     @NonNull
     @ToString.Exclude
-    @Comment("内容ID")
     Essay essay;
     /**
      * 内容ID
@@ -43,11 +42,13 @@ public class EssayImgs {
      * 是否要在头部显示
      */
     @Column(nullable = false)
+    @Comment("是否在内容页头部展示")
     boolean showInHead = false;
     /**
      * 是否要在内容列表显示
      */
     @Column(nullable = false)
+    @Comment("是否在内容列表展示")
     boolean showInList = false;
 
     /**
@@ -58,7 +59,6 @@ public class EssayImgs {
     @JoinColumn(nullable = false, name = "img_id", insertable = false, updatable = false)
     @NonNull
     @ToString.Exclude
-    @Comment("图片UUID")
     Img img;
     /**
      * 图片UUID

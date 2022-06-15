@@ -7,6 +7,7 @@ import com.fei.mcresweb.defs.ConfigManager;
 import com.fei.mcresweb.defs.Configs;
 import com.fei.mcresweb.defs.CookiesManager;
 import com.fei.mcresweb.restservice.user.*;
+import com.fei.mcresweb.service.InitService;
 import com.fei.mcresweb.service.UserService;
 import lombok.val;
 import org.springframework.http.HttpStatus;
@@ -27,11 +28,14 @@ public class UserController {
     private final UserService service;
     private final ConfigManager configManager;
     private final CookiesManager cookiesManager;
+    private final InitService initService;
 
-    public UserController(UserService service, ConfigManager configManager, CookiesManager cookiesManager) {
+    public UserController(UserService service, ConfigManager configManager, CookiesManager cookiesManager,
+        InitService initService) {
         this.service = service;
         this.configManager = configManager;
         this.cookiesManager = cookiesManager;
+        this.initService = initService;
     }
 
     /**
@@ -83,6 +87,38 @@ public class UserController {
         val info = service.register(I18n.loc(req), body);
         if (info.isSuccess()) {
             resp.addCookie(service.summonTokenCookie(info.getUserid()));
+        }
+        return info;
+    }
+
+    /**
+     * 管理员注册接口, 仅在初始化时可用
+     */
+    @GetMapping("/register-admin")
+    @ResponseBody
+    public String registerAdmin(HttpServletResponse resp) {
+        if (!service.needInit())
+            return null;
+        return initService.summonID();
+    }
+
+    /**
+     * 管理员注册接口, 仅在初始化时可用
+     *
+     * @return 注册结果
+     */
+    @PostMapping("/register-admin")
+    @ResponseBody
+    public RegisterInfo registerAdmin(HttpServletRequest req, HttpServletResponse resp,
+        @RequestBody UserService.registerReq body, @RequestHeader("admin-code") String adminCode) {
+        if (!service.needInit())
+            return null;
+        if (!initService.checkID(adminCode))
+            return null;
+        val info = register(req, resp, body);
+        if (info.isSuccess()) {
+            initService.removeID();
+            service.setAdmin(info.getUserid());
         }
         return info;
     }

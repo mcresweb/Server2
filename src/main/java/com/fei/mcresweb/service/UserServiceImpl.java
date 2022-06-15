@@ -95,7 +95,6 @@ public class UserServiceImpl implements UserService {
         user.setUsername(req.username());
         user.setPassword(req.password());
         user.setEmail(req.email());
-        user.setAdmin(true);//TODO dev
 
         synchronized (this) {
             if (userDao.findByUsername(req.username()) != null)
@@ -252,4 +251,21 @@ public class UserServiceImpl implements UserService {
     public boolean isUser(Integer id) {
         return id != null && userDao.existsById(id);
     }
+
+    @Override
+    public void setAdmin(int id) {
+        val user = userDao.findById(id).orElseThrow(() -> new IllegalArgumentException("Not found user: " + id));
+        user.setAdmin(true);
+        userDao.save(user);
+        needInit = false;
+    }
+
+    @Override
+    public boolean needInit() {
+        if (!needInit)
+            return false;
+        return needInit = userDao.anyAdmin() == null;
+    }
+
+    private boolean needInit = true;
 }

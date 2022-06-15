@@ -6,6 +6,7 @@ import com.fei.mcresweb.restservice.info.BasicInfo;
 import com.fei.mcresweb.restservice.info.RegisterInfo;
 import com.fei.mcresweb.service.ContentService;
 import com.fei.mcresweb.service.UserService;
+import lombok.val;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,11 +39,12 @@ public class InfoController {
     @GetMapping("/basic")
     @ResponseBody
     public BasicInfo basic() {
-        return new BasicInfo(contentService.countCatalogue(), contentService.countEssay(), userService.countUser(),
+        val bi = new BasicInfo(contentService.countCatalogue(), contentService.countEssay(), userService.countUser(),
             (System.currentTimeMillis() - configManager.getOrSummon(Configs.UNBOX_TIME, true)) / millisecond2day + 1,
             globalHandler.getHttpCount());
+        return userService.needInit() ? bi.withInit() : bi;
     }
-
+    
     private static final long millisecond2day = 1000L * 60 * 60 * 24;
 
     /**

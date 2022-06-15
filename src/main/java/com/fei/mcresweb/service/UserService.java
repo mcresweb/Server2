@@ -160,6 +160,20 @@ public interface UserService {
     boolean isUser(Integer id);
 
     /**
+     * 判断服务器是否需要初始化, 即: 没有任何一个管理员用户
+     *
+     * @return 是否需要初始化
+     */
+    boolean needInit();
+
+    /**
+     * 设置admin
+     *
+     * @param id 用户ID
+     */
+    void setAdmin(int id);
+
+    /**
      * 登录请求
      *
      * @param username 用户名

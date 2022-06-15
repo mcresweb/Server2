@@ -1,15 +1,13 @@
 package com.fei.mcresweb.service;
 
 import com.fei.mcresweb.Tool;
+import com.fei.mcresweb.config.I18n;
 import com.fei.mcresweb.dao.User;
 import com.fei.mcresweb.dao.UserDao;
 import com.fei.mcresweb.defs.ConfigManager;
 import com.fei.mcresweb.defs.Configs;
 import com.fei.mcresweb.defs.CookiesManager;
-import com.fei.mcresweb.restservice.user.LoginInfo;
-import com.fei.mcresweb.restservice.user.MyUserInfo;
-import com.fei.mcresweb.restservice.user.OtherUserInfo;
-import com.fei.mcresweb.restservice.user.RegisterInfo;
+import com.fei.mcresweb.restservice.user.*;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
@@ -26,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * 用户服务
@@ -34,19 +33,9 @@ import java.util.Date;
  */
 @Service
 public class UserServiceImpl implements UserService {
-    private static final String wrongUP = "错误的用户名密码";
-    private static final String wrongTime = "登录请求失效";
-    /**
-     * 用户DAO
-     */
-    final UserDao repo;
-    /**
-     * 配置文件
-     */
-    final ConfigManager configManager;
-    /**
-     * cookie管理器
-     */
+
+    private final UserDao userDao;
+    private final ConfigManager configManager;
     private final CookiesManager cookiesManager;
     /**
      * jwt加密密钥
@@ -58,7 +47,7 @@ public class UserServiceImpl implements UserService {
     private final JwtParser jwtParser;
 
     public UserServiceImpl(UserDao repo, ConfigManager configManager, CookiesManager cookiesManager) {
-        this.repo = repo;
+        this.userDao = repo;
         this.configManager = configManager;
 
         jwtKey = Keys.hmacShaKeyFor(configManager.getOrSummon(Configs.JWT_KEY, true));
@@ -79,30 +68,28 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public LoginInfo login(@NonNull loginReq req) {
+    public LoginInfo login(@NotNull Locale locale, @NonNull loginReq req) {
         val range = configManager.getOrSummon(Configs.LOGIN_TIME_RANGE, true);
         if (Math.abs(req.time() - System.currentTimeMillis()) > range) {
-            //TODO 登录时间戳判断, 暂不启用
-            // return LoginInfo.byErr(wrongTime);
+            return LoginInfo.byErr(I18n.msg("user.wrong.time", locale));
         }
-        val user = repo.findByUsername(req.username());
+        val user = userDao.findByUsername(req.username());
         if (user == null)
-            return LoginInfo.byErr(wrongUP);
+            return LoginInfo.byErr(I18n.msg("user.wrong.user-pwd", locale));
         val pwd = hashString(user.getPassword(), req.time());
         val success = pwd != null && pwd.equalsIgnoreCase(req.password());
         if (!success)
-            return LoginInfo.byErr(wrongUP);
+            return LoginInfo.byErr(I18n.msg("user.wrong.user-pwd", locale));
         return user.toLoginInfo();
     }
 
-    private static final String MSG_USER_EXISTS = "用户名已存在";
-    private static final String MSG_USER_BAD = "用户名数据错误";
+    //    private static final String MSG_USER_EXISTS = "用户名已存在";
 
     @Override
-    public RegisterInfo register(@NonNull registerReq req) {
+    public RegisterInfo register(@NotNull Locale locale, @NonNull registerReq req) {
 
         if (isInvalidUserName(req.username()))
-            return RegisterInfo.byErr(MSG_USER_BAD);
+            return RegisterInfo.byErr(I18n.msg("user.invalid-data.username", locale));
 
         User user = new User();
         user.setUsername(req.username());
@@ -111,17 +98,19 @@ public class UserServiceImpl implements UserService {
         user.setAdmin(true);//TODO dev
 
         synchronized (this) {
-            if (repo.findByUsername(req.username()) != null)
-                return RegisterInfo.byErr(MSG_USER_EXISTS);
+            if (userDao.findByUsername(req.username()) != null)
+                return RegisterInfo.byErr(I18n.msg("user.exist", locale));
 
-            user = repo.save(user);
+            user = userDao.save(user);
         }
         return user.toRegisterInfo();
     }
 
-    private boolean isInvalidUserName(String username) {
+    private boolean isInvalidUserName(@NotNull String username) {
         if (username.length() > configManager.getOrSummon(Configs.USERNAME_LENGTH, true))
             return true;
+        if (username.length() <= 0)
+            return false;
         boolean isNumber = true;
         for (var i = 0; i < username.length(); i++) {
             char c = username.charAt(i);
@@ -130,9 +119,29 @@ public class UserServiceImpl implements UserService {
             if (c == '@')
                 return true;
         }
-        if (isNumber)
-            return true;
-        return false;
+        return isNumber;
+    }
+
+    @Override
+    public boolean maybeUserIdString(@NotNull String str) {
+        if (str.isEmpty())
+            return false;
+        for (var i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if ((c < '0' || c > '9'))
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean maybeUserEmailString(@NotNull String str) {
+        if (str.length() < 5)//x@x.x
+            return false;
+        val index = str.indexOf("@", 1);
+        if (index < 0)
+            return false;
+        return str.indexOf(".", index + 2) >= 0;
     }
 
     /**
@@ -143,7 +152,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public OtherUserInfo infoOther(int id) {
-        val user = repo.findById(id);
+        val user = userDao.findById(id);
         return user.map(OtherUserInfo::fromDatabase).orElse(null);
     }
 
@@ -157,7 +166,7 @@ public class UserServiceImpl implements UserService {
     public @NonNull MyUserInfo infoMe(Integer id) {
         if (id == null)
             return MyUserInfo.NOT_LOGIN;
-        val user = repo.findById(id);
+        val user = userDao.findById(id);
         return user.map(MyUserInfo::fromDatabase).orElse(MyUserInfo.NOT_LOGIN);
     }
 
@@ -209,7 +218,7 @@ public class UserServiceImpl implements UserService {
     public boolean isAdmin(Integer user) {
         if (user == null)
             return false;
-        return repo.findById(user).map(User::isAdmin).orElse(false);
+        return userDao.findById(user).map(User::isAdmin).orElse(false);
     }
 
     @Override
@@ -224,7 +233,23 @@ public class UserServiceImpl implements UserService {
     public boolean isVip(Integer user, boolean real) {
         if (user == null)
             return false;
-        return repo.findById(user).map(u -> u.isVip() || (!real && u.isAdmin())).orElse(false);
+        return userDao.findById(user).map(u -> u.isVip() || (!real && u.isAdmin())).orElse(false);
     }
 
+    @Override
+    public VipInfo vipUser(Integer user) {
+        if (user == null)
+            return null;
+        return userDao.findById(user).map(VipInfo::new).orElse(null);
+    }
+
+    @Override
+    public long countUser() {
+        return userDao.count();
+    }
+
+    @Override
+    public boolean isUser(Integer id) {
+        return id != null && userDao.existsById(id);
+    }
 }

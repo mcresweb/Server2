@@ -1,5 +1,6 @@
 package com.fei.mcresweb.service;
 
+import com.fei.mcresweb.config.I18n;
 import com.fei.mcresweb.dao.Keyword;
 import com.fei.mcresweb.dao.KeywordDao;
 import com.fei.mcresweb.dao.User;
@@ -7,12 +8,10 @@ import com.fei.mcresweb.dao.UserDao;
 import com.fei.mcresweb.defs.TokenHelper;
 import com.fei.mcresweb.restservice.keyword.KeywordList;
 import com.fei.mcresweb.restservice.keyword.RemoveResp;
+import com.fei.mcresweb.restservice.keyword.SearchSpecification;
 import com.fei.mcresweb.restservice.keyword.UseResult;
 import lombok.val;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -35,20 +34,26 @@ public class KeywordServiceImpl implements KeywordService {
      */
     public static final int TOKEN_LEN = TokenHelper.TOKEN_LEN;
     private final Random random = new SecureRandom();
-    @Autowired
-    private KeywordDao keywordDao;
-    @Autowired
-    private UserDao userDao;
+    private final KeywordDao keywordDao;
+    private final UserDao userDao;
 
-    private static final String NOT_LOGIN = "未登录";
-    private static final String NOT_ADMIN = "非管理员";
+    private final UserService userService;
+
     private static final String BAD_TOKEN = "无效token";
+
+    public KeywordServiceImpl(KeywordDao keywordDao, UserDao userDao, UserService userService) {
+        this.keywordDao = keywordDao;
+        this.userDao = userDao;
+        this.userService = userService;
+    }
 
     @Override
     public String[] summon(Integer user, @NotNull SummonReq req) {
         if (user == null)
             return null;
-        //TODO admin check
+        if (!userDao.findById(user).map(User::isAdmin).orElse(false))
+            return null;
+
         val expire = req.expire() == null ? null : new Date(req.expire());
         val list = IntStream//
             .range(0, req.amount())//
@@ -60,59 +65,25 @@ public class KeywordServiceImpl implements KeywordService {
     }
 
     @Override
-    public @NotNull KeywordList listKeyword(Integer reqUser, int type, Integer summoner, Integer user, int page) {
+    public @NotNull KeywordList listKeyword(Integer reqUser, SearchReq req) {
         if (reqUser == null)
             return KeywordList.EMPTY;
-        //TODO admin check
-
-        val lType = ListType.get(type);
-        if (lType == null)
+        if (!userDao.findById(reqUser).map(User::isAdmin).orElse(false))
             return KeywordList.EMPTY;
 
-        val pr = PageRequest.of(page, 5);
-        Page<Keyword> keywords;
-        if (summoner == null) {
-            if (user == null) {
-                keywords = switch (lType) {
-                    case ALL -> keywordDao.findBy(pr);
-                    case USED, UNUSED -> keywordDao.findByUsedEquals(lType == ListType.USED, pr);
-                };
-            } else {
-                keywords = switch (lType) {
-                    case ALL -> keywordDao.findByUserIDEquals(user, pr);
-                    case USED, UNUSED -> keywordDao.findByUserIDEqualsAndUsedEquals(user, lType == ListType.USED, pr);
-                };
-            }
-        } else {
-            if (user == null) {
-                keywords = switch (lType) {
-                    case ALL -> keywordDao.findByGenerateUserIDEquals(summoner, pr);
-                    case USED, UNUSED -> keywordDao.findByGenerateUserIDEqualsAndUsedEquals(summoner,
-                        lType == ListType.USED, pr);
-                };
-            } else {
-                keywords = switch (lType) {
-                    case ALL -> keywordDao.findByGenerateUserIDEqualsAndUserIDEquals(summoner, user, pr);
-                    case USED, UNUSED -> keywordDao.findByGenerateUserIDEqualsAndUserIDEqualsAndUsedEquals(summoner,
-                        user, lType == ListType.USED, pr);
-                };
-            }
-        }
+        val pr = PageRequest.of(req.page() - 1, 10);
+        Page<Keyword> keywords = keywordDao.findAll(new SearchSpecification(req, userService), pr);
 
         return KeywordList.valueOf(keywords);
     }
 
     @Override
-    public synchronized @NotNull UseResult useKeyword(Integer userID, UseReq body) {
-        if (userID == null)
-            return new UseResult(NOT_LOGIN);
+    public synchronized @NotNull UseResult useKeyword(@NotNull Locale locale, Integer userID, UseReq body) {
         val user = getUser(userID);
-
-        //TODO ADMIN check
 
         val kw = keywordDao.findById(body.token()).orElse(null);
         if (kw == null || kw.isUsed() || kw.isExpire())
-            return new UseResult(BAD_TOKEN);
+            return new UseResult(I18n.msg("bad-token", locale));
 
         kw.use(userID);
         keywordDao.save(kw);
@@ -125,12 +96,6 @@ public class KeywordServiceImpl implements KeywordService {
 
     @Override
     public synchronized @NotNull RemoveResp removeKeyword(Integer userID, RemoveReq body) {
-        if (userID == null)
-            return RemoveResp.byErr(NOT_LOGIN, null);
-        val user = getUser(userID);
-
-        //TODO ADMIN check
-
         //有效的token
         val valid = StreamSupport.stream(keywordDao.findAllById(body.tokens()).spliterator(), true)//
             .filter(kw -> !kw.isUsed())//
@@ -181,17 +146,4 @@ public class KeywordServiceImpl implements KeywordService {
         return sb.substring(0, TOKEN_LEN).toUpperCase(Locale.ENGLISH);
     }
 
-    /**
-     * 列出类型
-     */
-    private enum ListType {
-        ALL, USED, UNUSED;
-        private static final ListType[] all = values();
-
-        @Nullable
-        @Contract(pure = true)
-        public static ListType get(int type) {
-            return type < 0 || type >= all.length ? null : all[type];
-        }
-    }
 }

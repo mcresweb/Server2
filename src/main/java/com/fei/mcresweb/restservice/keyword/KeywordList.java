@@ -28,15 +28,16 @@ public record KeywordList(int page, long amount, List<Keyword> list) {
      * @param token      令牌
      * @param summonTime 生成时间
      * @param summoner   生成者
-     * @param used       使用者
+     * @param used       是否已经
+     * @param user       使用者
      * @param usedTime   使用时间
      * @param value      价值
      * @param expire     过期时间
      */
-    public record Keyword(@NonNull String token, long summonTime, int summoner, boolean used, Long usedTime, int value,
-                          Long expire) {
+    public record Keyword(@NonNull String token, long summonTime, int summoner, boolean used, Integer user,
+                          Long usedTime, int value, Long expire) {
         public Keyword(@NotNull com.fei.mcresweb.dao.Keyword kw) {
-            this(kw.getId(), kw.getGenerateTime().getTime(), kw.getGenerateUserID(), kw.isUsed(),
+            this(kw.getId(), kw.getGenerateTime().getTime(), kw.getGenerateUserID(), kw.isUsed(), kw.getUserID(),
                 kw.getUseTime() == null ? null : kw.getUseTime().getTime(), kw.getValue(),
                 kw.getExpire() == null ? null : kw.getExpire().getTime());
         }

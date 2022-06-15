@@ -2,14 +2,11 @@ package com.fei.mcresweb.service;
 
 import com.fei.mcresweb.dao.Img;
 import com.fei.mcresweb.dao.ImgDao;
-import com.fei.mcresweb.dao.User;
-import com.fei.mcresweb.dao.UserDao;
 import com.fei.mcresweb.restservice.img.UploadResp;
 import lombok.NonNull;
 import lombok.val;
 import org.hibernate.engine.jdbc.BlobProxy;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -25,24 +22,17 @@ import java.util.UUID;
  */
 @Service
 public class ImgServiceImpl implements ImgService {
-    @Autowired
-    private UserDao userDao;
-    @Autowired
-    private ImgDao imgDao;
-
-    private static final String NOT_LOGIN = "未登录";
-    private static final String NOT_ADMIN = "非管理员";
+    private final ImgDao imgDao;
 
     private static final Object createLock = new Object();
+
+    public ImgServiceImpl(ImgDao imgDao) {
+        this.imgDao = imgDao;
+    }
 
     @Override
     @Transactional
     public @NotNull UploadResp uploadImg(Integer user, @NonNull InputStream file, long length) throws IOException {
-        if (user == null)
-            return UploadResp.byErr(NOT_LOGIN);
-        if (!userDao.findById(user).map(User::isAdmin).orElse(false))
-            return UploadResp.byErr(NOT_ADMIN);
-
         val raw = Files.createTempFile("MRW", ".tmp");
         val thu = Files.createTempFile("MRW", ".tmp");
         UUID uuid;

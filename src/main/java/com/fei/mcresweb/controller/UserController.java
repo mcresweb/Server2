@@ -1,13 +1,14 @@
 package com.fei.mcresweb.controller;
 
 import com.fei.mcresweb.Tool;
+import com.fei.mcresweb.config.I18n;
+import com.fei.mcresweb.config.UserAuth;
 import com.fei.mcresweb.defs.ConfigManager;
 import com.fei.mcresweb.defs.Configs;
 import com.fei.mcresweb.defs.CookiesManager;
 import com.fei.mcresweb.restservice.user.*;
 import com.fei.mcresweb.service.UserService;
 import lombok.val;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -25,24 +26,24 @@ import javax.servlet.http.HttpServletResponse;
 public class UserController {
     private final UserService service;
     private final ConfigManager configManager;
-    @Autowired
-    private CookiesManager cookiesManager;
+    private final CookiesManager cookiesManager;
 
-    public UserController(UserService service, ConfigManager configManager) {
+    public UserController(UserService service, ConfigManager configManager, CookiesManager cookiesManager) {
         this.service = service;
         this.configManager = configManager;
+        this.cookiesManager = cookiesManager;
     }
 
     /**
      * 用户登录接口
      *
-     * @param req 请求体
+     * @param body 请求体
      * @return 登录结果信息
      */
     @PostMapping("/login")
     @ResponseBody
-    public LoginInfo login(@RequestBody UserService.loginReq req, HttpServletResponse resp) {
-        val info = service.login(req);
+    public LoginInfo login(HttpServletRequest req, HttpServletResponse resp, @RequestBody UserService.loginReq body) {
+        val info = service.login(I18n.loc(req), body);
         if (info.isSuccess()) {
             resp.addCookie(service.summonTokenCookie(info.getUserid()));
         }
@@ -72,13 +73,14 @@ public class UserController {
     /**
      * 用户注册接口
      *
-     * @param req 注册数据
+     * @param body 注册数据
      * @return 注册结果信息
      */
     @PostMapping("/register")
     @ResponseBody
-    public RegisterInfo register(@RequestBody UserService.registerReq req, HttpServletResponse resp) {
-        val info = service.register(req);
+    public RegisterInfo register(HttpServletRequest req, HttpServletResponse resp,
+        @RequestBody UserService.registerReq body) {
+        val info = service.register(I18n.loc(req), body);
         if (info.isSuccess()) {
             resp.addCookie(service.summonTokenCookie(info.getUserid()));
         }
@@ -104,14 +106,27 @@ public class UserController {
      */
     @GetMapping("/me")
     @ResponseBody
+    @UserAuth(UserAuth.AuthType.LOGIN)
     public MyUserInfo me(HttpServletRequest req) {
         return service.infoMe(service.getUserIdByCookie(req));
     }
 
     /**
-     * 查询自己用户信息的接口
+     * 查询自己VIP信息的接口
      *
-     * @return 用户信息
+     * @return VIP信息
+     */
+    @GetMapping("/me-vip")
+    @ResponseBody
+    @UserAuth(UserAuth.AuthType.LOGIN)
+    public VipInfo meVip(HttpServletRequest req) {
+        return service.vipUser(service.getUserIdByCookie(req));
+    }
+
+    /**
+     * 验证码信息(VID)
+     *
+     * @return VID
      */
     @GetMapping("/vaptcha")
     @ResponseBody
@@ -126,6 +141,7 @@ public class UserController {
      */
     @PostMapping("/vaptcha")
     @ResponseStatus(HttpStatus.OK)
+    @UserAuth(UserAuth.AuthType.ADMIN)
     public void setVaptcha(HttpServletRequest req, @RequestBody UserService.SetVaptchaReq data) {
         if (!service.isAdmin(service.getUserIdByCookie(req)))
             return;

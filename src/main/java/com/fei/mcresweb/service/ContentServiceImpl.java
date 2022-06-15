@@ -1,5 +1,6 @@
 package com.fei.mcresweb.service;
 
+import com.fei.mcresweb.config.I18n;
 import com.fei.mcresweb.dao.*;
 import com.fei.mcresweb.restservice.content.*;
 import lombok.NonNull;
@@ -23,12 +24,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class ContentServiceImpl implements ContentService {
-    private static final String MSG_NOT_FOUND_CATALOGUE = "未找到大分类!";
-    private static final String MSG_NOT_FOUND_CATEGORY = "未找到小分类!";
-    private static final String MSG_NOT_FOUND_ESSAY = "未找到帖子!";
-    private static final String MSG_NOT_LOGIN = "未登录";
-    private static final String MSG_NOT_ADMIN = "非管理员";
-    private static final String MSG_BAD_DATA = "错误数据";
 
     private final CatalogueDao catalogueDao;
     private final CategoryDao categoryDao;
@@ -36,21 +31,19 @@ public class ContentServiceImpl implements ContentService {
     private final EssayImgsDao essayImgsDao;
     private final EssayFileDao essayFileDao;
     private final EssayFileInfoDao essayFileInfoDao;
-    private final UserDao userDao;
 
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<String, CatalogueInfo> cache_catalogue;
     private Map<String, LinkedHashMap<String, CategoryInfo>> cache_category;
 
     public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, EssayDao essayDao,
-        EssayImgsDao essayImgsDao, EssayFileDao essayFileDao, EssayFileInfoDao essayFileInfoDao, UserDao userDao) {
+        EssayImgsDao essayImgsDao, EssayFileDao essayFileDao, EssayFileInfoDao essayFileInfoDao) {
         this.catalogueDao = catalogueDao;
         this.categoryDao = categoryDao;
         this.essayDao = essayDao;
         this.essayImgsDao = essayImgsDao;
         this.essayFileDao = essayFileDao;
         this.essayFileInfoDao = essayFileInfoDao;
-        this.userDao = userDao;
 
         withCache(() -> 0);
     }
@@ -76,23 +69,25 @@ public class ContentServiceImpl implements ContentService {
      * @return 返回数据
      */
     private <T> T withCache(Supplier<T> runner) {
+        cacheLock.readLock().lock();
+        try {
+            if (cache_catalogue != null)
+                return runner.get();
+        } finally {
+            cacheLock.readLock().unlock();
+        }
         cacheLock.writeLock().lock();
         try {
             if (cache_catalogue == null) {
-                cacheLock.writeLock().lock();
-                try {
-                    cache_catalogue = new LinkedHashMap<>();
-                    cache_category = new LinkedHashMap<>();
-                    for (val catalogue : catalogueDao.findAll()) {
-                        cache_catalogue.put(catalogue.getKey(), CatalogueInfo.fromDatabase(catalogue));
-                        val map = new LinkedHashMap<String, CategoryInfo>();
-                        cache_category.put(catalogue.getKey(), map);
-                        for (val category : catalogue.getCategoryList()) {
-                            map.put(category.getKey(), CategoryInfo.fromDatabase(category));
-                        }
+                cache_catalogue = new LinkedHashMap<>();
+                cache_category = new LinkedHashMap<>();
+                for (val catalogue : catalogueDao.findAll()) {
+                    cache_catalogue.put(catalogue.getKey(), CatalogueInfo.fromDatabase(catalogue));
+                    val map = new LinkedHashMap<String, CategoryInfo>();
+                    cache_category.put(catalogue.getKey(), map);
+                    for (val category : catalogue.getCategoryList()) {
+                        map.put(category.getKey(), CategoryInfo.fromDatabase(category));
                     }
-                } finally {
-                    cacheLock.writeLock().unlock();
                 }
             }
             return runner.get();
@@ -136,7 +131,7 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     @NonNull
-    public ModResp modCatalogue(@NonNull ModCatalogue data) {
+    public ModResp modCatalogue(@Nullable Locale locale, @NonNull ModCatalogue data) {
         try {
             if (data.isCU()) {
                 val info = new Catalogue();
@@ -152,20 +147,20 @@ public class ContentServiceImpl implements ContentService {
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {
-            return ModResp.byErr(MSG_BAD_DATA);
+            return ModResp.byErr(I18n.msg("bad-data", locale));
         } finally {
             clearCache();
         }
-        return ModResp.byErr(MSG_BAD_DATA);
+        return ModResp.byErr(I18n.msg("bad-data", locale));
     }
 
     @Override
     @NonNull
-    public ModResp modCategory(@NonNull ModCategory data) {
+    public ModResp modCategory(@Nullable Locale locale, @NonNull ModCategory data) {
         try {
             if (data.isCU()) {
                 if (!withCache(() -> cache_catalogue.containsKey(data.catalogue())))
-                    return ModResp.byErr(MSG_NOT_FOUND_CATALOGUE);
+                    return ModResp.byErr(I18n.msg("notfound.catalogue", locale));
                 val info = new Category();
                 info.setCatalogueKey(data.catalogue());
                 info.setKey(data.key());
@@ -177,32 +172,29 @@ public class ContentServiceImpl implements ContentService {
                 return ModResp.SUCCESS;
             } else if (data.isD()) {
                 if (!withCache(() -> cache_catalogue.containsKey(data.catalogue())))
-                    return ModResp.byErr(MSG_NOT_FOUND_CATALOGUE);
+                    return ModResp.byErr(I18n.msg("notfound.catalogue", locale));
                 categoryDao.deleteById(data.key());
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {
-            return ModResp.byErr(MSG_BAD_DATA);
+            return ModResp.byErr(I18n.msg("bad-data", locale));
         } finally {
             clearCache();
         }
-        return ModResp.byErr(MSG_BAD_DATA);
+        return ModResp.byErr(I18n.msg("bad-data", locale));
     }
 
     @Override
-    public @NonNull UploadResp<Integer> uploadEssay(Integer user, UploadEssay data) {
-        if (user == null)
-            return UploadResp.byErr(MSG_NOT_LOGIN);
-        if (!userDao.findById(user).map(User::isAdmin).orElse(false))
-            return UploadResp.byErr(MSG_NOT_ADMIN);
+    public @NonNull UploadResp<Integer> uploadEssay(@Nullable Locale locale, Integer user, UploadEssay data) {
+
         if (!withCache(() -> cache_category.containsKey(data.catalogue())))
-            return UploadResp.byErr(MSG_NOT_FOUND_CATALOGUE);
+            return UploadResp.byErr(I18n.msg("notfound.catalogue", locale));
         if (!withCache(() -> cache_category.get(data.catalogue()).containsKey(data.category())))
-            return UploadResp.byErr(MSG_NOT_FOUND_CATEGORY);
+            return UploadResp.byErr(I18n.msg("notfound.category", locale));
         if (data.tags() != null)
             for (val tag : data.tags())
                 if (tag.contains(","))
-                    return UploadResp.byErr(MSG_BAD_DATA);
+                    return UploadResp.byErr(I18n.msg("bad-data", locale));
 
         var essay = new Essay();
         essay.setCatalogueKey(data.catalogue());
@@ -219,7 +211,7 @@ public class ContentServiceImpl implements ContentService {
             essayImgsDao.saveAll(essay.getImg());
             return UploadResp.byId(essay.getId());
         } catch (DataAccessException e) {
-            return UploadResp.byErr(MSG_BAD_DATA);
+            return UploadResp.byErr(I18n.msg("bad-data", locale));
         }
     }
 
@@ -230,14 +222,11 @@ public class ContentServiceImpl implements ContentService {
     }
 
     @Override
-    public UploadResp<Collection<UUID>> uploadFile(Integer user, int id, MultipartFile[] files) {
-        if (user == null)
-            return UploadResp.byErr(MSG_NOT_LOGIN);
-        if (!userDao.findById(user).map(User::isAdmin).orElse(false))
-            return UploadResp.byErr(MSG_NOT_ADMIN);
+    public UploadResp<Collection<UUID>> uploadFile(@Nullable Locale locale, Integer user, int id,
+        MultipartFile[] files) {
 
         if (!essayDao.existsById(id))
-            return UploadResp.byErr(MSG_BAD_DATA);
+            return UploadResp.byErr(I18n.msg("bad-data", locale));
 
         Collection<UUID> uuids = new ArrayList<>();
         for (val file : files) {
@@ -258,12 +247,11 @@ public class ContentServiceImpl implements ContentService {
     }
 
     @Override
-    public @NotNull FileListResp listFile(Integer user, int essay) {
-        if (user == null)
-            return FileListResp.byErr(MSG_NOT_LOGIN);
+    public @NotNull FileListResp listFile(@Nullable Locale locale, Integer user, int essay) {
+
         val list = essayFileInfoDao.findAllByEssayIdEquals(essay);
         if (list == null)
-            return FileListResp.byErr(MSG_NOT_FOUND_ESSAY);
+            return FileListResp.byErr(I18n.msg("notfound.essay", locale));
 
         return FileListResp.byDbList(list);
     }
@@ -278,5 +266,15 @@ public class ContentServiceImpl implements ContentService {
     public FileInfo getFileInfo(int essay, UUID file) {
         val info = essayFileInfoDao.findById(new EssayFileInfoPK(essay, file));
         return info.map(FileInfo::new).orElse(null);
+    }
+
+    @Override
+    public int countCatalogue() {
+        return withCache(() -> cache_catalogue.size());
+    }
+
+    @Override
+    public long countEssay() {
+        return essayDao.count();
     }
 }

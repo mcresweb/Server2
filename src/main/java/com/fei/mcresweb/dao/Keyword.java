@@ -3,6 +3,7 @@ package com.fei.mcresweb.dao;
 import com.fei.mcresweb.defs.TokenHelper;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -20,6 +21,7 @@ import java.util.Locale;
 @ToString
 @NoArgsConstructor
 @Table(name = "keyword")
+@FieldNameConstants
 public class Keyword {
     /**
      * 会员码
@@ -105,7 +107,7 @@ public class Keyword {
      * @return 是否已经过期
      */
     public boolean isExpire() {
-        return expire.getTime() > System.currentTimeMillis();
+        return expire == null || expire.getTime() <= System.currentTimeMillis();
     }
 
     /**

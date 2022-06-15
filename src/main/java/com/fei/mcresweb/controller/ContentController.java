@@ -1,5 +1,7 @@
 package com.fei.mcresweb.controller;
 
+import com.fei.mcresweb.config.I18n;
+import com.fei.mcresweb.config.UserAuth;
 import com.fei.mcresweb.restservice.content.*;
 import com.fei.mcresweb.service.ContentService;
 import com.fei.mcresweb.service.UserService;
@@ -101,8 +103,9 @@ public class ContentController {
      */
     @PostMapping("/mod-catalogue")
     @ResponseBody
-    public ModResp modCatalogue(@RequestBody ContentService.ModCatalogue body) {
-        return service.modCatalogue(body);
+    @UserAuth(UserAuth.AuthType.ADMIN)
+    public ModResp modCatalogue(HttpServletRequest req, @RequestBody ContentService.ModCatalogue body) {
+        return service.modCatalogue(I18n.loc(req), body);
     }
 
     /**
@@ -113,8 +116,9 @@ public class ContentController {
      */
     @PostMapping("/mod-category")
     @ResponseBody
-    public ModResp modCategory(@RequestBody ContentService.ModCategory body) {
-        return service.modCategory(body);
+    @UserAuth(UserAuth.AuthType.ADMIN)
+    public ModResp modCategory(HttpServletRequest req, @RequestBody ContentService.ModCategory body) {
+        return service.modCategory(I18n.loc(req), body);
     }
 
     /**
@@ -126,8 +130,9 @@ public class ContentController {
      */
     @PostMapping("/upload-essay")
     @ResponseBody
+    @UserAuth(UserAuth.AuthType.ADMIN)
     public UploadResp<Integer> uploadEssay(HttpServletRequest req, @RequestBody ContentService.UploadEssay body) {
-        return service.uploadEssay(user.getUserIdByCookie(req), body);
+        return service.uploadEssay(I18n.loc(req), user.getUserIdByCookie(req), body);
     }
 
     /**
@@ -140,9 +145,10 @@ public class ContentController {
      */
     @PostMapping("/upload-file")
     @ResponseBody
+    @UserAuth(UserAuth.AuthType.ADMIN)
     public UploadResp<Collection<UUID>> uploadFile(HttpServletRequest req, @RequestParam("essay") int id,
         @RequestPart("file") MultipartFile[] files) {
-        return service.uploadFile(user.getUserIdByCookie(req), id, files);
+        return service.uploadFile(I18n.loc(req), user.getUserIdByCookie(req), id, files);
     }
 
     /**
@@ -154,8 +160,9 @@ public class ContentController {
      */
     @GetMapping("/list-file")
     @ResponseBody
+    @UserAuth(UserAuth.AuthType.VIP)
     public FileListResp listFile(HttpServletRequest req, @RequestParam("essay") int essay) {
-        return service.listFile(user.getUserIdByCookie(req), essay);
+        return service.listFile(I18n.loc(req), user.getUserIdByCookie(req), essay);
     }
 
     /**
@@ -167,6 +174,7 @@ public class ContentController {
      * @return 文件
      */
     @GetMapping("/file")
+    @UserAuth(UserAuth.AuthType.VIP)
     public ResponseEntity<FileSystemResource> getFile(HttpServletRequest req, @RequestParam("essay") int essay,
         @RequestParam("file") UUID file, @RequestHeader("User-Agent") String userAgent) throws IOException {
 

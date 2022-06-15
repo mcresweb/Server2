@@ -4,7 +4,9 @@ import com.fei.mcresweb.restservice.keyword.KeywordList;
 import com.fei.mcresweb.restservice.keyword.RemoveResp;
 import com.fei.mcresweb.restservice.keyword.UseResult;
 import lombok.NonNull;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,14 +31,11 @@ public interface KeywordService {
     /**
      * 列出所有的会员码
      *
-     * @param reqUser  请求用户
-     * @param type     请求类型
-     * @param summoner 指定生成者
-     * @param user     指定使用者
-     * @param page     页码
+     * @param reqUser   请求用户
+     * @param searchReq 搜索数据
      * @return 会员码列表
      */
-    @NotNull KeywordList listKeyword(Integer reqUser, int type, Integer summoner, Integer user, int page);
+    @NotNull KeywordList listKeyword(Integer reqUser, SearchReq searchReq);
 
     /**
      * 使用会员码
@@ -45,7 +44,7 @@ public interface KeywordService {
      * @param body 使用的token
      * @return 使用结果
      */
-    @NotNull UseResult useKeyword(Integer user, UseReq body);
+    @NotNull UseResult useKeyword(@NotNull Locale locale, Integer user, UseReq body);
 
     /**
      * 移除会员码
@@ -97,4 +96,41 @@ public interface KeywordService {
         }
     }
 
+    /**
+     * 搜索请求
+     *
+     * @param type       指定token类型
+     * @param summoner   生成者 ID/用户名/邮箱
+     * @param user       使用者 ID/用户名/邮箱
+     * @param page       页码（从1开始）
+     * @param summonTime 生成时间范围
+     * @param expireTime 过期时间范围
+     * @param useTime    使用时间范围
+     */
+    record SearchReq(Boolean used, @Nullable String summoner, @Nullable String user, int page,
+                     @Nullable Long[] summonTime, @Nullable Long[] expireTime, Long[] useTime) {
+        public SearchReq(Boolean used, String summoner, String user, int page, Long[] summonTime, Long[] expireTime,
+            Long[] useTime) {
+            this.used = used;
+            this.summoner = summoner;
+            this.user = user;
+            this.page = page;
+            this.summonTime = timeRangeFilter(summonTime);
+            this.expireTime = timeRangeFilter(expireTime);
+            this.useTime = timeRangeFilter(useTime);
+
+        }
+
+        @Nullable
+        @Contract("null->null")
+        private static Long[] timeRangeFilter(@Nullable Long[] time) {
+            if (time == null)
+                return null;
+            if (time.length != 2)
+                throw new IllegalArgumentException("Bad time range");
+            if (time[0] == null && time[1] == null)
+                return null;
+            return time;
+        }
+    }
 }

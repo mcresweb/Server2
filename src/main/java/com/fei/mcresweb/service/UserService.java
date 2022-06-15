@@ -1,15 +1,14 @@
 package com.fei.mcresweb.service;
 
-import com.fei.mcresweb.restservice.user.LoginInfo;
-import com.fei.mcresweb.restservice.user.MyUserInfo;
-import com.fei.mcresweb.restservice.user.OtherUserInfo;
-import com.fei.mcresweb.restservice.user.RegisterInfo;
+import com.fei.mcresweb.restservice.user.*;
 import lombok.NonNull;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.lang.Nullable;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Locale;
 
 /**
  * 用户服务
@@ -23,7 +22,7 @@ public interface UserService {
      * @param req 请求
      * @return 登录信息
      */
-    LoginInfo login(@NonNull loginReq req);
+    LoginInfo login(@NotNull Locale locale, @NonNull loginReq req);
 
     /**
      * 注册
@@ -31,7 +30,23 @@ public interface UserService {
      * @param req 请求
      * @return 注册信息
      */
-    RegisterInfo register(@NonNull registerReq req);
+    RegisterInfo register(@NotNull Locale locale, @NonNull registerReq req);
+
+    /**
+     * 判断输入是否可能是用户ID
+     *
+     * @param str 输入字符串
+     * @return 是否肯能是user id
+     */
+    boolean maybeUserIdString(@NotNull String str);
+
+    /**
+     * 判断输入是否可能是用户邮箱
+     *
+     * @param str 输入字符串
+     * @return 是否肯能是user email
+     */
+    boolean maybeUserEmailString(@NotNull String str);
 
     /**
      * 列出他人信息
@@ -120,6 +135,29 @@ public interface UserService {
      */
     @Contract("null,_->false")
     boolean isVip(Integer user, boolean real);
+
+    /**
+     * 列出用户的VIP信息
+     *
+     * @param user 用户
+     * @return VIP信息
+     */
+    @Contract("null->null")
+    @Nullable
+    VipInfo vipUser(Integer user);
+
+    /**
+     * @return 用户数量
+     */
+    long countUser();
+
+    /**
+     * 判断用户是否存在
+     *
+     * @param id 用户ID
+     * @return 用户是否存在
+     */
+    boolean isUser(Integer id);
 
     /**
      * 登录请求

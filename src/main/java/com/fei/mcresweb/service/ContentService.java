@@ -8,6 +8,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,7 +58,7 @@ public interface ContentService {
      * @param catalogue 大分类信息
      * @return 修改结果
      */
-    @NonNull ModResp modCatalogue(@NonNull ModCatalogue catalogue);
+    @NonNull ModResp modCatalogue(@Nullable Locale locale, @NonNull ModCatalogue catalogue);
 
     /**
      * 修改小分类
@@ -65,7 +66,7 @@ public interface ContentService {
      * @param category 小分类信息
      * @return 修改结果
      */
-    @NonNull ModResp modCategory(@NonNull ModCategory category);
+    @NonNull ModResp modCategory(@Nullable Locale locale, @NonNull ModCategory category);
 
     /**
      * 上传内容
@@ -74,7 +75,7 @@ public interface ContentService {
      * @param essay 内容
      * @return 上传结果
      */
-    @NonNull UploadResp<Integer> uploadEssay(Integer user, UploadEssay essay);
+    @NonNull UploadResp<Integer> uploadEssay(@Nullable Locale locale, Integer user, UploadEssay essay);
 
     /**
      * 随机返回一个内容id
@@ -92,7 +93,7 @@ public interface ContentService {
      * @param files 文件
      * @return 上传结果
      */
-    UploadResp<Collection<UUID>> uploadFile(Integer user, int id, MultipartFile[] files);
+    UploadResp<Collection<UUID>> uploadFile(@Nullable Locale locale, Integer user, int id, MultipartFile[] files);
 
     /**
      * 列出文件列表
@@ -101,7 +102,7 @@ public interface ContentService {
      * @param essay 内容ID
      * @return 文件列表
      */
-    @NonNull FileListResp listFile(Integer user, int essay);
+    @NonNull FileListResp listFile(@Nullable Locale locale, Integer user, int essay);
 
     /**
      * 获取资源文件
@@ -122,6 +123,16 @@ public interface ContentService {
      */
     @Nullable
     FileInfo getFileInfo(int essay, UUID file);
+
+    /**
+     * @return 大分类数量
+     */
+    int countCatalogue();
+
+    /**
+     * @return 内容数量
+     */
+    long countEssay();
 
     /**
      * @param key   唯一标识

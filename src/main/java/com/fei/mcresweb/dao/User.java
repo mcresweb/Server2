@@ -5,6 +5,7 @@ import com.fei.mcresweb.restservice.user.LoginInfo;
 import com.fei.mcresweb.restservice.user.RegisterInfo;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,6 +25,7 @@ import java.util.Objects;
 @ToString
 @NoArgsConstructor
 @Table(name = "user")
+@FieldNameConstants
 public class User {
     /**
      * 用户标识符
@@ -109,7 +111,7 @@ public class User {
     }
 
     public boolean isVip() {
-        return vipLvl != VipLevel.NONE && vipExpire.getTime() > System.currentTimeMillis();
+        return vipLvl != VipLevel.NONE && vipExpire != null && vipExpire.getTime() > System.currentTimeMillis();
     }
 
     /**

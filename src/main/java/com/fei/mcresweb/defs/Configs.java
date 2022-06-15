@@ -114,4 +114,11 @@ public class Configs {
             return 18;
         }
     };
+
+    public static final ConfType<Long> UNBOX_TIME = new ConfType.ConfTypeLong("unbox_time") {
+        @Override
+        public @NonNull Long summon() {
+            return System.currentTimeMillis();
+        }
+    };
 }

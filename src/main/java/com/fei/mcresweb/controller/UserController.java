@@ -106,7 +106,6 @@ public class UserController {
      */
     @GetMapping("/me")
     @ResponseBody
-    @UserAuth(UserAuth.AuthType.LOGIN)
     public MyUserInfo me(HttpServletRequest req) {
         return service.infoMe(service.getUserIdByCookie(req));
     }

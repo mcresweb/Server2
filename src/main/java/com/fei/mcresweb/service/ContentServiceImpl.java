@@ -8,6 +8,7 @@ import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -143,7 +144,11 @@ public class ContentServiceImpl implements ContentService {
                 catalogueDao.save(info);
                 return ModResp.SUCCESS;
             } else if (data.isD()) {
-                catalogueDao.deleteById(data.key());
+                try {
+                    catalogueDao.deleteById(data.key());
+                } catch (DataIntegrityViolationException e) {
+                    return ModResp.byErr(I18n.msg("not-empty.catalogue", locale));
+                }
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {
@@ -173,7 +178,11 @@ public class ContentServiceImpl implements ContentService {
             } else if (data.isD()) {
                 if (!withCache(() -> cache_catalogue.containsKey(data.catalogue())))
                     return ModResp.byErr(I18n.msg("notfound.catalogue", locale));
-                categoryDao.deleteById(data.key());
+                try {
+                    categoryDao.deleteById(data.key());
+                } catch (DataIntegrityViolationException e) {
+                    return ModResp.byErr(I18n.msg("not-empty.category", locale));
+                }
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {

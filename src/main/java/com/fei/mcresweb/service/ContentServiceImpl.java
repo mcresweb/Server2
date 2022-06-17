@@ -258,6 +258,7 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public FileSystemResource getFile(int essay, UUID file) {
+        essayDao.addDownload(essay);
         val path = essayFileDao.getFileResource(new EssayFileInfoPK(essay, file));
         return path == null ? null : new FileSystemResource(path);
     }

@@ -1,5 +1,6 @@
 package com.fei.mcresweb.controller;
 
+import com.fei.mcresweb.config.I18n;
 import com.fei.mcresweb.config.UserAuth;
 import com.fei.mcresweb.service.UserService;
 import lombok.val;
@@ -11,6 +12,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
@@ -31,11 +34,17 @@ public class GlobalHandler implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(@NotNull HttpServletRequest req, @NotNull HttpServletResponse resp,
-        @NotNull Object handler) {
+        @NotNull Object handler) throws IOException {
         if (handler instanceof HandlerMethod handlerMethod) {
-            val code = authUser(req, handlerMethod.getMethod().getAnnotation(UserAuth.class));
+            val auth = handlerMethod.getMethod().getAnnotation(UserAuth.class);
+            val code = authUser(req, auth);
             if (code != null) {
                 resp.setStatus(code);
+                resp.setCharacterEncoding("UTF-8");
+                resp.setContentType("text/plain;charset=UTF-8");
+                try (val out = resp.getOutputStream()) {
+                    out.write(I18n.msg(auth.value().msgPath, I18n.loc(req)).getBytes(StandardCharsets.UTF_8));
+                }
                 return false;
             }
         }

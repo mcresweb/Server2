@@ -16,5 +16,6 @@ public @interface UserAuth {
 
     enum AuthType {
         LOGIN, VIP, ADMIN;
+        public final String msgPath = "user-auth." + name();
     }
 }

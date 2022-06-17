@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -79,8 +80,11 @@ public class ContentController {
      */
     @GetMapping("/essay")
     @ResponseBody
-    public EssayDetail essay(@RequestParam("id") int id) {
-        return service.essay(id);
+    public EssayDetail essay(@RequestParam("id") int id, HttpServletResponse resp) {
+        val detail = service.essay(id);
+        if (detail == null)
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return detail;
     }
 
     /**
@@ -90,9 +94,13 @@ public class ContentController {
      */
     @GetMapping("/random-essay")
     @ResponseBody
-    public EssayDetail randomEssay() {
+    public EssayDetail randomEssay(HttpServletResponse resp) {
         val id = service.randomEssayId();
-        return id == null ? null : essay(id);
+        if (id == null) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return null;
+        }
+        return essay(id, resp);
     }
 
     /**

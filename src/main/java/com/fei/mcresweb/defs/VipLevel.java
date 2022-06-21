@@ -38,4 +38,8 @@ public enum VipLevel {
     GOD("GOD");
     @Getter
     private final String name;
+
+    public boolean isVip() {
+        return this != NONE;
+    }
 }

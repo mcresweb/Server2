@@ -111,7 +111,7 @@ public class User {
     }
 
     public boolean isVip() {
-        return vipLvl != VipLevel.NONE && vipExpire != null && vipExpire.getTime() > System.currentTimeMillis();
+        return vipLvl.isVip() && vipExpire != null && vipExpire.getTime() > System.currentTimeMillis();
     }
 
     /**

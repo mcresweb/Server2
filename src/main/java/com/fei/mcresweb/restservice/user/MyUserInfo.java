@@ -1,12 +1,14 @@
 package com.fei.mcresweb.restservice.user;
 
 import com.fei.mcresweb.dao.User;
+import com.fei.mcresweb.defs.VipLevel;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 我的用户信息
@@ -19,7 +21,7 @@ public class MyUserInfo {
     /**
      * 未登录
      */
-    public static final MyUserInfo NOT_LOGIN = new MyUserInfo(false, null, null, null, null, null, null);
+    public static final MyUserInfo NOT_LOGIN = new MyUserInfo(false, null, null, null, null, null, null, null);
     /**
      * 是否处于登录状态
      */
@@ -45,6 +47,10 @@ public class MyUserInfo {
      */
     Boolean vip;
     /**
+     * VIP名称
+     */
+    String vipName;
+    /**
      * 是否被锁定
      */
     Boolean lock;
@@ -52,10 +58,11 @@ public class MyUserInfo {
     /**
      * 通过已登录的数据构造一个信息
      */
-    @Contract("_, _, _, _, _, _ -> new")
+    @Contract("_, _, _, _, _, _, _ -> new")
     public static @NotNull MyUserInfo byLogin(@NonNull Integer id, @NonNull String name, @NonNull String email,
-        boolean admin, boolean vip, boolean lock) {
-        return new MyUserInfo(true, id, name, email, admin, vip, lock);
+        boolean admin, boolean isVip, @Nullable VipLevel vip, boolean lock) {
+        return new MyUserInfo(true, id, name, email, admin, isVip && vip != null && vip.isVip(),
+            (vip == null ? VipLevel.NONE : vip).getName(), lock);
     }
 
     /**
@@ -66,6 +73,7 @@ public class MyUserInfo {
      */
     @Contract("_ -> new")
     public static @NotNull MyUserInfo fromDatabase(@NonNull User user) {
-        return byLogin(user.getId(), user.getUsername(), user.getEmail(), user.isAdmin(), user.isVip(), false/*TODO*/);
+        return byLogin(user.getId(), user.getUsername(), user.getEmail(), user.isAdmin(), user.isVip(),
+            user.getVipLvl(), false/*TODO*/);
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -32,19 +33,22 @@ public class ContentServiceImpl implements ContentService {
     private final EssayImgsDao essayImgsDao;
     private final EssayFileDao essayFileDao;
     private final EssayFileInfoDao essayFileInfoDao;
+    private final ContentSearchService contentSearchService;
 
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<String, CatalogueInfo> cache_catalogue;
     private Map<String, LinkedHashMap<String, CategoryInfo>> cache_category;
 
     public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, EssayDao essayDao,
-        EssayImgsDao essayImgsDao, EssayFileDao essayFileDao, EssayFileInfoDao essayFileInfoDao) {
+        EssayImgsDao essayImgsDao, EssayFileDao essayFileDao, EssayFileInfoDao essayFileInfoDao,
+        ContentSearchService contentSearchService) {
         this.catalogueDao = catalogueDao;
         this.categoryDao = categoryDao;
         this.essayDao = essayDao;
         this.essayImgsDao = essayImgsDao;
         this.essayFileDao = essayFileDao;
         this.essayFileInfoDao = essayFileInfoDao;
+        this.contentSearchService = contentSearchService;
 
         withCache(() -> 0);
     }
@@ -213,11 +217,17 @@ public class ContentServiceImpl implements ContentService {
         essay.setContent(data.content());
         essay.setType(data.type());
         essay.setDescription(data.description());
-        essay.setTags(data.tags() == null ? null : String.join(",", data.tags()));
+        essay.setTagsList(data.tags());
         try {
             essay = essayDao.save(essay);
             essay.setImg(data.imgs() == null ? Collections.emptyMap() : data.imgs());
             essayImgsDao.saveAll(essay.getImg());
+            try {
+                contentSearchService.writeEssay(essay);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return UploadResp.byErr(I18n.msg("search.write.ioe", locale, e));
+            }
             return UploadResp.byId(essay.getId());
         } catch (DataAccessException e) {
             return UploadResp.byErr(I18n.msg("bad-data", locale));

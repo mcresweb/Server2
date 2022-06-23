@@ -3,6 +3,7 @@ package com.fei.mcresweb.dao;
 import com.fei.mcresweb.service.ContentService;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.Comment;
 import org.springframework.lang.Nullable;
@@ -21,7 +22,8 @@ import java.util.stream.Collectors;
 @ToString
 @NoArgsConstructor
 @Table(name = "essay")
-public class Essay {
+@FieldNameConstants
+public class Essay implements Cloneable {
 
     /**
      * 内容ID
@@ -161,6 +163,21 @@ public class Essay {
     public int hashCode() {
         return getClass().hashCode();
     }
+
+    public void setTagsList(@Nullable Collection<String> tags) {
+        setTags(tags == null ? null : String.join(tagDelimiter, tags));
+    }
+
+    public @Nullable
+    String[] getTagsList() {
+        val tags = getTags();
+        return tags == null ? null : tags.split(tagDelimiter);
+    }
+
+    /**
+     * tag分隔符
+     */
+    private static final String tagDelimiter = ",";
 
     /**
      * @return 任意一个头部图片uuid

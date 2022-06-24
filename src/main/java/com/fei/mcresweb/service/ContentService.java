@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -72,10 +71,21 @@ public interface ContentService {
      * 上传内容
      *
      * @param user  上传者
+     * @param id    内容ID(仅在编辑essay时传入)
      * @param essay 内容
      * @return 上传结果
      */
-    @NonNull UploadResp<Integer> uploadEssay(@Nullable Locale locale, Integer user, UploadEssay essay);
+    @NonNull UploadResp<Integer> uploadEssay(@Nullable Locale locale, Integer user, @Nullable Integer id,
+        UploadEssay essay);
+
+    /**
+     * 获取内容编辑数据
+     *
+     * @param id 内容ID
+     * @return 编辑数据
+     */
+    @Nullable
+    UploadEssay getEssayEditData(int id);
 
     /**
      * 随机返回一个内容id
@@ -94,6 +104,13 @@ public interface ContentService {
      * @return 上传结果
      */
     UploadResp<Collection<UUID>> uploadFile(@Nullable Locale locale, Integer user, int id, MultipartFile[] files);
+
+    /**
+     * @param id   内容ID
+     * @param file 文件ID
+     * @return 移除响应
+     */
+    ModResp removeFile(int id, UUID file);
 
     /**
      * 列出文件列表
@@ -188,29 +205,4 @@ public interface ContentService {
         }
     }
 
-    /**
-     * 上传文字
-     *
-     * @param catalogue   大分类
-     * @param category    小分类
-     * @param title       内容标题
-     * @param imgs        帖子图片
-     * @param content     内容文章
-     * @param type        内容文章的类型
-     * @param description 内容描述
-     * @param tags        标签
-     */
-    record UploadEssay(@NonNull String catalogue, @NonNull String category, @NonNull String title,
-                       Map<UUID, ImgUsing> imgs, @NonNull String content, @NonNull String type, String description,
-                       Collection<String> tags) {
-    }
-
-    /**
-     * 使用方式
-     *
-     * @param head 是否显示在头部
-     * @param list 是否显示在内容列表
-     */
-    record ImgUsing(boolean head, boolean list) {
-    }
 }

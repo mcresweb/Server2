@@ -1,6 +1,6 @@
 package com.fei.mcresweb.dao;
 
-import com.fei.mcresweb.service.ContentService;
+import com.fei.mcresweb.restservice.content.ImgUsing;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @Table(name = "essay")
 @FieldNameConstants
-public class Essay implements Cloneable {
+public class Essay {
 
     /**
      * 内容ID
@@ -141,12 +141,14 @@ public class Essay implements Cloneable {
      * 内容标签
      */
     @Comment("内容标签, 使用英文逗号分割")
+    @Nullable
     String tags;
     /**
      * 内容文章的类型<br>
      * 不在后端进行任何解析, 由前端解析
      */
     @Comment("文章类型")
+    @Nullable
     String description;
 
     @Override
@@ -168,16 +170,16 @@ public class Essay implements Cloneable {
         setTags(tags == null ? null : String.join(tagDelimiter, tags));
     }
 
-    public @Nullable
-    String[] getTagsList() {
+    @Nullable
+    public List<String> getTagsList() {
         val tags = getTags();
-        return tags == null ? null : tags.split(tagDelimiter);
+        return tags == null ? null : Arrays.asList(tags.split(tagDelimiter));
     }
 
     /**
      * tag分隔符
      */
-    private static final String tagDelimiter = ",";
+    public static final String tagDelimiter = ",";
 
     /**
      * @return 任意一个头部图片uuid
@@ -198,7 +200,15 @@ public class Essay implements Cloneable {
         return img.stream().map(EssayImgs::getImgId).toList();
     }
 
-    public void setImg(@NonNull Map<UUID, ContentService.ImgUsing> imgs) {
+    public Map<UUID, ImgUsing> getImgUsing() {
+        LinkedHashMap<UUID, ImgUsing> map = new LinkedHashMap<>();
+        for (val img : this.img) {
+            map.put(img.getImgId(), new ImgUsing(img));
+        }
+        return map;
+    }
+
+    public void setImg(@NonNull Map<UUID, ImgUsing> imgs) {
         this.img = imgs.entrySet().stream().map(e -> new EssayImgs(getId(), e.getKey(), e.getValue()))
             .collect(Collectors.toSet());
     }

@@ -4,7 +4,6 @@ import com.fei.mcresweb.dao.Essay;
 import com.fei.mcresweb.dao.EssayImgs;
 import lombok.NonNull;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -33,7 +32,6 @@ public record EssayDetail(int id, @NonNull String catalogue, @NonNull String cat
         this(essay.getId(), essay.getCatalogueKey(), essay.getCategoryKey(), essay.getSenderID(), essay.getTitle(),
             essay.getStar(), essay.getStarAmount(), essay.getDownload(),
             essay.getImg().stream().filter(EssayImgs::isShowInList).map(EssayImgs::getImgId).toList(),
-            essay.getContent(), essay.getType(),
-            essay.getTags() == null ? null : Arrays.asList(essay.getTags().split(",")), essay.getDescription());
+            essay.getContent(), essay.getType(), essay.getTagsList(), essay.getDescription());
     }
 }

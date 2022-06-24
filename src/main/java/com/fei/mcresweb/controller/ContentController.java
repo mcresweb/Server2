@@ -5,6 +5,7 @@ import com.fei.mcresweb.config.UserAuth;
 import com.fei.mcresweb.restservice.content.*;
 import com.fei.mcresweb.service.ContentService;
 import com.fei.mcresweb.service.UserService;
+import lombok.NonNull;
 import lombok.val;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.CacheControl;
@@ -88,6 +89,36 @@ public class ContentController {
     }
 
     /**
+     * 获取内容的编辑数据
+     *
+     * @return 编辑数据
+     */
+    @GetMapping("/essay-edit")
+    @ResponseBody
+    @UserAuth(UserAuth.AuthType.ADMIN)
+    public UploadEssay essayEditData(@RequestParam("id") int id, HttpServletResponse resp) {
+        val detail = service.getEssayEditData(id);
+        if (detail == null)
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return detail;
+    }
+
+    /**
+     * 修改内容信息
+     *
+     * @param req  req
+     * @param body body
+     * @return 修改结果
+     */
+    @PostMapping("/essay-edit")
+    @ResponseBody
+    @UserAuth(UserAuth.AuthType.ADMIN)
+    public UploadResp<Integer> editEssay(HttpServletRequest req, @RequestParam("id") int id,
+        @RequestBody UploadEssay body) {
+        return service.uploadEssay(I18n.loc(req), user.getUserIdByCookie(req), id, body);
+    }
+
+    /**
      * 获取内容详细信息的接口
      *
      * @return 详细信息
@@ -139,8 +170,8 @@ public class ContentController {
     @PostMapping("/upload-essay")
     @ResponseBody
     @UserAuth(UserAuth.AuthType.ADMIN)
-    public UploadResp<Integer> uploadEssay(HttpServletRequest req, @RequestBody ContentService.UploadEssay body) {
-        return service.uploadEssay(I18n.loc(req), user.getUserIdByCookie(req), body);
+    public UploadResp<Integer> uploadEssay(HttpServletRequest req, @RequestBody UploadEssay body) {
+        return service.uploadEssay(I18n.loc(req), user.getUserIdByCookie(req), null, body);
     }
 
     /**
@@ -157,6 +188,22 @@ public class ContentController {
     public UploadResp<Collection<UUID>> uploadFile(HttpServletRequest req, @RequestParam("essay") int id,
         @RequestPart("file") MultipartFile[] files) {
         return service.uploadFile(I18n.loc(req), user.getUserIdByCookie(req), id, files);
+    }
+
+    /**
+     * 上传资源文件
+     *
+     * @param req   req
+     * @param id    内容ID
+     * @param files 资源文件
+     * @return 上传结果
+     */
+    @GetMapping("/remove-file")
+    @ResponseBody
+    @UserAuth(UserAuth.AuthType.ADMIN)
+    public ModResp removeFile(HttpServletRequest req, @RequestParam("essay") int id,
+        @RequestParam("file") @NonNull UUID files) {
+        return service.removeFile(id, files);
     }
 
     /**

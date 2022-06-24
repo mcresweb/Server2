@@ -28,6 +28,12 @@ import java.util.Map;
  */
 public record SearchResult(@NonNull String hits, boolean hasMore, Collection<DocResult> docs) {
     /**
+     * 返回结果最大长度, 超过此长度将强制截断并在尾部添加{@link #ellipsis 省略号}
+     */
+    public static final int maxLength = 200;
+    public static final String ellipsis = "...";
+
+    /**
      * 通过异常构建搜索结果
      *
      * @param err 错误
@@ -72,6 +78,8 @@ public record SearchResult(@NonNull String hits, boolean hasMore, Collection<Doc
                         val v = highlighter.getBestFragment(analyzer, field, value[i]);
                         if (v != null)
                             value[i] = v;
+                        if (value[i].length() > maxLength)
+                            value[i] = value[i].substring(0, maxLength) + ellipsis;
                     }
                     if (value.length > 1)
                         fieldsMap.put(field, value);

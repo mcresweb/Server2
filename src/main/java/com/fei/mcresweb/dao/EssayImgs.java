@@ -1,6 +1,6 @@
 package com.fei.mcresweb.dao;
 
-import com.fei.mcresweb.service.ContentService;
+import com.fei.mcresweb.restservice.content.ImgUsing;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.Hibernate;
@@ -67,7 +67,7 @@ public class EssayImgs {
     @Column(nullable = false, name = "img_id", columnDefinition = "BINARY(16)")
     UUID imgId;
 
-    public EssayImgs(int essayId, @NonNull UUID imgId, @NonNull ContentService.ImgUsing type) {
+    public EssayImgs(int essayId, @NonNull UUID imgId, @NonNull ImgUsing type) {
         setEssayId(essayId);
         setImgId(imgId);
         setShowInHead(type.head());

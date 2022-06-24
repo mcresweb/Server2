@@ -29,6 +29,7 @@ public class ContentServiceImpl implements ContentService {
 
     private final CatalogueDao catalogueDao;
     private final CategoryDao categoryDao;
+    private final UserDao userDao;
     private final EssayDao essayDao;
     private final EssayImgsDao essayImgsDao;
     private final EssayFileDao essayFileDao;
@@ -39,11 +40,12 @@ public class ContentServiceImpl implements ContentService {
     private Map<String, CatalogueInfo> cache_catalogue;
     private Map<String, LinkedHashMap<String, CategoryInfo>> cache_category;
 
-    public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, EssayDao essayDao,
+    public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, UserDao userDao, EssayDao essayDao,
         EssayImgsDao essayImgsDao, EssayFileDao essayFileDao, EssayFileInfoDao essayFileInfoDao,
         ContentSearchService contentSearchService) {
         this.catalogueDao = catalogueDao;
         this.categoryDao = categoryDao;
+        this.userDao = userDao;
         this.essayDao = essayDao;
         this.essayImgsDao = essayImgsDao;
         this.essayFileDao = essayFileDao;
@@ -156,7 +158,7 @@ public class ContentServiceImpl implements ContentService {
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {
-            return ModResp.byErr(I18n.msg("bad-data", locale));
+            return ModResp.byErr(I18n.msg("bad-data", locale, e));
         } finally {
             clearCache();
         }
@@ -190,7 +192,7 @@ public class ContentServiceImpl implements ContentService {
                 return ModResp.SUCCESS;
             }
         } catch (DataAccessException e) {
-            return ModResp.byErr(I18n.msg("bad-data", locale));
+            return ModResp.byErr(I18n.msg("bad-data", locale, e));
         } finally {
             clearCache();
         }
@@ -198,7 +200,8 @@ public class ContentServiceImpl implements ContentService {
     }
 
     @Override
-    public @NonNull UploadResp<Integer> uploadEssay(@Nullable Locale locale, Integer user, UploadEssay data) {
+    public @NonNull UploadResp<Integer> uploadEssay(@Nullable Locale locale, Integer user, @Nullable Integer id,
+        UploadEssay data) {
 
         if (!withCache(() -> cache_category.containsKey(data.catalogue())))
             return UploadResp.byErr(I18n.msg("notfound.catalogue", locale));
@@ -206,10 +209,12 @@ public class ContentServiceImpl implements ContentService {
             return UploadResp.byErr(I18n.msg("notfound.category", locale));
         if (data.tags() != null)
             for (val tag : data.tags())
-                if (tag.contains(","))
-                    return UploadResp.byErr(I18n.msg("bad-data", locale));
+                if (tag.contains(Essay.tagDelimiter))
+                    return UploadResp.byErr(I18n.msg("bad-data-tag", locale, tag));
 
-        var essay = new Essay();
+        var essay = id == null ? new Essay() : essayDao.findById(id).orElse(null);
+        if (essay == null)
+            return UploadResp.byErr(I18n.msg("bad-data", locale, id));
         essay.setCatalogueKey(data.catalogue());
         essay.setCategoryKey(data.category());
         essay.setSenderID(user);
@@ -223,6 +228,9 @@ public class ContentServiceImpl implements ContentService {
             essay.setImg(data.imgs() == null ? Collections.emptyMap() : data.imgs());
             essayImgsDao.saveAll(essay.getImg());
             try {
+                //noinspection ConstantConditions
+                if (essay.getSender() == null)
+                    essay.setSender(userDao.findById(user).orElseThrow());
                 contentSearchService.writeEssay(essay);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -230,8 +238,13 @@ public class ContentServiceImpl implements ContentService {
             }
             return UploadResp.byId(essay.getId());
         } catch (DataAccessException e) {
-            return UploadResp.byErr(I18n.msg("bad-data", locale));
+            return UploadResp.byErr(I18n.msg("bad-data", locale, e));
         }
+    }
+
+    @Override
+    public UploadEssay getEssayEditData(int id) {
+        return essayDao.findById(id).map(UploadEssay::new).orElse(null);
     }
 
     @Override
@@ -245,7 +258,7 @@ public class ContentServiceImpl implements ContentService {
         MultipartFile[] files) {
 
         if (!essayDao.existsById(id))
-            return UploadResp.byErr(I18n.msg("bad-data", locale));
+            return UploadResp.byErr(I18n.msg("bad-data", locale, id));
 
         Collection<UUID> uuids = new ArrayList<>();
         for (val file : files) {
@@ -263,6 +276,19 @@ public class ContentServiceImpl implements ContentService {
         }
 
         return UploadResp.byId(uuids);
+    }
+
+    @Override
+    public ModResp removeFile(int id, UUID file) {
+        val pk = new EssayFileInfoPK(id, file);
+        try {
+            essayFileDao.removeFile(pk);
+            essayFileInfoDao.deleteById(pk);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return ModResp.byErr(e.toString());
+        }
+        return ModResp.SUCCESS;
     }
 
     @Override

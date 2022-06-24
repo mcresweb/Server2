@@ -77,6 +77,20 @@ public class EssayFileDao {
     }
 
     /**
+     * 移除资源文件
+     *
+     * @param key 文件键
+     */
+    public void removeFile(@NonNull EssayFileInfoPK key) {
+        val path = getFile(key);
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new DataAccessResourceFailureException("Can not delete File: " + path, e);
+        }
+    }
+
+    /**
      * 获取文件资源
      *
      * @param key 文件键

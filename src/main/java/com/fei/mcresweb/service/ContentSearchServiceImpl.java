@@ -38,7 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
@@ -155,8 +154,7 @@ public class ContentSearchServiceImpl implements ContentSearchService {
         document.add(new TextField(Essay.Fields.title, essay.getTitle(), Field.Store.YES));
         val tags = essay.getTagsList();
         if (tags != null)
-            Arrays.stream(tags).map(tag -> new StringField(Essay.Fields.tags, tag, Field.Store.YES))
-                .forEach(document::add);
+            tags.stream().map(tag -> new StringField(Essay.Fields.tags, tag, Field.Store.YES)).forEach(document::add);
         document.add(
             new TextField(Essay.Fields.content, transContent(essay.getContent(), essay.getType()), Field.Store.YES));
         document.add(new StringField(Essay.Fields.catalogueKey, essay.getCatalogueKey(), Field.Store.YES));

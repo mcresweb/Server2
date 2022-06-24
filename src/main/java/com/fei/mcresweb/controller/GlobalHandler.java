@@ -60,7 +60,7 @@ public class GlobalHandler implements HandlerInterceptor {
             val userAuth = method.getAnnotation(UserAuth.class);
             val callCooling = method.getAnnotation(CallCooling.class);
 
-            if (userAuth != null && callCooling != null) {
+            if (userAuth != null || callCooling != null) {
                 val id = userService.getUserIdByCookie(req);
                 Integer code;
 
@@ -74,7 +74,8 @@ public class GlobalHandler implements HandlerInterceptor {
                 // cool down
                 code = checkCooling(method, id, req.getRemoteAddr(), callCooling);
                 if (code == null) {
-                    resp.setHeader(COOLING_HEADER, Long.toString(callCooling.value()));
+                    if (callCooling != null)
+                        resp.setHeader(COOLING_HEADER, Long.toString(callCooling.value()));
                 } else {
                     writeResp(req, resp, code, CallCooling.UnlimitedType.msgPath,
                         decimalFormat.format(callCooling.value() / 1000F));
@@ -87,7 +88,9 @@ public class GlobalHandler implements HandlerInterceptor {
     }
 
     private @Nullable Integer checkCooling(@NotNull Method method, @Nullable Integer id, @NotNull String remoteAddr,
-        @NotNull CallCooling callCooling) {
+        @Nullable CallCooling callCooling) {
+        if (callCooling == null)
+            return null;
         val unlimited = switch (callCooling.unlimited()) {
             case LOGIN -> userService.isUser(id);
             case VIP -> userService.isVip(id);

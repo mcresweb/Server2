@@ -39,7 +39,7 @@ public class SearchController {
     @GetMapping("/essay")
     @ResponseBody
     @UserAuth(UserAuth.AuthType.LOGIN)
-    @CallCooling(value = 5 * 1000, unlimited = CallCooling.UnlimitedType.NO)
+    @CallCooling(value = 5 * 1000, unlimited = CallCooling.UnlimitedType.VIP)
     public SearchResult summon(//
         @RequestParam("t") @NonNull String txt,//
         @RequestParam(value = "catalogue", required = false) @Nullable String catalogue,//

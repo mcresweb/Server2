@@ -54,7 +54,7 @@ public class EssayList {
                             UUID img) {
         public EssayInfo(@NonNull Essay essay) {
             this(essay.getId(), essay.getSender().getUsername(), essay.getTitle(), essay.getStar(), essay.getDownload(),
-                essay.getAnyHeadImg());
+                essay.getAnyListImg());
         }
     }
 

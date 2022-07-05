@@ -3,6 +3,7 @@ package com.fei.mcresweb.service;
 import com.fei.mcresweb.restservice.img.UploadResp;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,5 +29,5 @@ public interface ImgService {
      * @param uuid 图片UUID
      * @return 图片数据
      */
-    Blob getImg(UUID uuid);
+    @Nullable Blob getImg(UUID uuid);
 }

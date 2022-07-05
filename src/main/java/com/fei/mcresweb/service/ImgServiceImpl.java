@@ -7,6 +7,7 @@ import lombok.NonNull;
 import lombok.val;
 import org.hibernate.engine.jdbc.BlobProxy;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -65,6 +66,7 @@ public class ImgServiceImpl implements ImgService {
     }
 
     @Override
+    @Nullable
     public Blob getImg(UUID uuid) {
         return imgDao.findById(uuid).map(Img::getImg).orElse(null);
     }

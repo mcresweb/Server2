@@ -5,6 +5,7 @@ import com.fei.mcresweb.restservice.img.UploadResp;
 import com.fei.mcresweb.service.ImgService;
 import com.fei.mcresweb.service.UserService;
 import lombok.NonNull;
+import lombok.val;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,14 +37,18 @@ public class ImgController {
     @ResponseBody
     @UserAuth(UserAuth.AuthType.ADMIN)
     public UploadResp upload(@NonNull HttpServletRequest req) throws IOException {
-        System.out.println(req.getContentType());
         return service.uploadImg(userService.getUserIdByCookie(req), req.getInputStream(), req.getContentLengthLong());
     }
 
     @GetMapping("/get/{uuid}")
     public void getImg(@PathVariable("uuid") @NonNull UUID uuid, @NonNull HttpServletResponse resp) throws Exception {
         resp.setContentType(imgType);
-        service.getImg(uuid).getBinaryStream().transferTo(resp.getOutputStream());
+        val img = service.getImg(uuid);
+        if (img == null) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        img.getBinaryStream().transferTo(resp.getOutputStream());
     }
 
     public static final String imgType = "image/webp";

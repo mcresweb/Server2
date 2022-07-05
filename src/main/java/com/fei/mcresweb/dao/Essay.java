@@ -182,23 +182,20 @@ public class Essay {
     public static final String tagDelimiter = ",";
 
     /**
-     * @return 任意一个头部图片uuid
+     * @return 任意一个列表图片uuid
      */
     @Nullable
-    public UUID getAnyHeadImg() {
-        return img.stream()//
-            .filter(EssayImgs::isShowInHead)//
+    public UUID getAnyListImg() {
+        val arr = img.stream()//
+            .filter(EssayImgs::isShowInList)//
             .map(EssayImgs::getImgId)//
-            .findAny()//
-            .orElse(null);
+            .toArray(UUID[]::new);
+        if (arr.length > 0)
+            return arr[RANDOM.nextInt(arr.length)];
+        return null;
     }
 
-    /**
-     * @return 所有图片UUID
-     */
-    public List<UUID> getImgUUID() {
-        return img.stream().map(EssayImgs::getImgId).toList();
-    }
+    private static final Random RANDOM = new Random();
 
     public Map<UUID, ImgUsing> getImgUsing() {
         LinkedHashMap<UUID, ImgUsing> map = new LinkedHashMap<>();

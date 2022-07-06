@@ -6,11 +6,14 @@ import com.fei.mcresweb.restservice.content.*;
 import lombok.NonNull;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +23,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.fei.mcresweb.service.ContentServiceImpl.Conf.recommendAmount;
 
 /**
  * 内容服务
@@ -34,6 +40,7 @@ public class ContentServiceImpl implements ContentService {
     private final EssayImgsDao essayImgsDao;
     private final EssayFileDao essayFileDao;
     private final EssayFileInfoDao essayFileInfoDao;
+    private final EssayRecommendDao essayRecommendDao;
     private final ContentSearchService contentSearchService;
 
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
@@ -42,7 +49,7 @@ public class ContentServiceImpl implements ContentService {
 
     public ContentServiceImpl(CatalogueDao catalogueDao, CategoryDao categoryDao, UserDao userDao, EssayDao essayDao,
         EssayImgsDao essayImgsDao, EssayFileDao essayFileDao, EssayFileInfoDao essayFileInfoDao,
-        ContentSearchService contentSearchService) {
+        EssayRecommendDao essayRecommendDao, ContentSearchService contentSearchService) {
         this.catalogueDao = catalogueDao;
         this.categoryDao = categoryDao;
         this.userDao = userDao;
@@ -50,6 +57,7 @@ public class ContentServiceImpl implements ContentService {
         this.essayImgsDao = essayImgsDao;
         this.essayFileDao = essayFileDao;
         this.essayFileInfoDao = essayFileInfoDao;
+        this.essayRecommendDao = essayRecommendDao;
         this.contentSearchService = contentSearchService;
 
         withCache(() -> 0);
@@ -129,6 +137,48 @@ public class ContentServiceImpl implements ContentService {
             return null;
         return EssayList.build(list.getTotalPages(),
             list.stream().map(EssayList.EssayInfo::new).collect(Collectors.toList()));
+    }
+
+    @Component
+    public static final class Conf {
+
+        static Pageable recommendAmount = PageRequest.ofSize(10);
+        static Pageable listEssayAmount = PageRequest.ofSize(10);
+
+        @Value("${mrw.content.recommend.list.amount}")
+        public void setRecommendAmount(String str) {
+            recommendAmount = PageRequest.ofSize(Integer.parseInt(str));
+        }
+
+        @Value("${mrw.content.essay.list.amount}")
+        public void setListEssayAmount(String str) {
+            listEssayAmount = PageRequest.ofSize(Integer.parseInt(str));
+        }
+
+    }
+
+    @Override
+    public @NotNull EssayList recommendEssay(@Nullable Integer target) {
+        val list = essayRecommendDao.findByExpireBeforeOrderByHoistDesc(new Date(), recommendAmount);
+        Stream<EssayList.EssayInfo> stream = list.stream().map(EssayList.EssayInfo::new);
+        if (list.getNumberOfElements() < recommendAmount.getPageSize())
+            stream = Stream.concat(stream, essayDao.findAll(recommendAmount).stream().map(EssayList.EssayInfo::new))
+                .distinct();
+        if (target != null)
+            stream = stream.filter(x -> x.id() != target);
+        return EssayList.build(Math.max(list.getTotalPages(), 1), stream.toList());
+    }
+
+    @Override
+    public EssayRecommendList.EssayRecommendInfo recommendEssayInfo(int id) {
+        return essayRecommendDao.findById(id).map(EssayRecommendList.EssayRecommendInfo::valueOf).orElse(null);
+    }
+
+    @Override
+    public @NotNull EssayRecommendList listRecommendEssay(int page) {
+        val list = essayRecommendDao.findAll(PageRequest.of(page, recommendAmount.getPageSize()));
+        return EssayRecommendList.build(list.getTotalPages(),
+            list.stream().map(EssayRecommendList.EssayRecommendInfo::valueOf).toList());
     }
 
     @Override
@@ -240,6 +290,20 @@ public class ContentServiceImpl implements ContentService {
         } catch (DataAccessException e) {
             return UploadResp.byErr(I18n.msg("bad-data", locale, e));
         }
+    }
+
+    @Override
+    public void addEssayRecommend(int user, int id, @Nullable Long expire) {
+        if (expire == null) {
+            essayRecommendDao.deleteById(id);
+            return;
+        }
+        val essay = new EssayRecommend();
+        essay.setEssayId(id);
+        essay.setExpire(new Date(expire));
+        essay.setSenderID(user);
+        essay.setHoist(System.currentTimeMillis());
+        essayRecommendDao.save(essay);
     }
 
     @Override

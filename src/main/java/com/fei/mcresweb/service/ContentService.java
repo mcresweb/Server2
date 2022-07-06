@@ -3,6 +3,7 @@ package com.fei.mcresweb.service;
 import com.fei.mcresweb.Tool;
 import com.fei.mcresweb.restservice.content.*;
 import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,6 +44,28 @@ public interface ContentService {
     EssayList listEssay(String catalogue, String category, int page);
 
     /**
+     * 推荐相关内容
+     *
+     * @param target 目标内容
+     * @return 内容列表
+     */
+    @NotNull EssayList recommendEssay(@Nullable Integer target);
+
+    /**
+     * 获取推荐信息
+     *
+     * @param id 目标内容
+     * @return 推荐信息
+     */
+    @Nullable
+    EssayRecommendList.EssayRecommendInfo recommendEssayInfo(int id);
+
+    /**
+     * 列出推荐内容信息
+     */
+    @NotNull EssayRecommendList listRecommendEssay(int page);
+
+    /**
      * 获取内容详细信息
      *
      * @param id 内容ID
@@ -77,6 +100,14 @@ public interface ContentService {
      */
     @NonNull UploadResp<Integer> uploadEssay(@Nullable Locale locale, Integer user, @Nullable Integer id,
         UploadEssay essay);
+
+    /**
+     * 添加内容推荐
+     *
+     * @param id     内容ID
+     * @param expire 过期时间
+     */
+    void addEssayRecommend(int user, int id, @Nullable Long expire);
 
     /**
      * 获取内容编辑数据

@@ -65,13 +65,72 @@ public class ContentController {
     /**
      * 列出内容的接口
      *
-     * @return 小分类列表
+     * @return 内容列表
      */
     @GetMapping("/list-essay")
     @ResponseBody
-    public EssayList listEssay(@RequestParam("catalogue") String catalogue, @RequestParam("category") String category,
-        @RequestParam("page") int page) {
-        return service.listEssay(catalogue, category, page);
+    public EssayList listEssay(HttpServletResponse resp, @RequestParam("catalogue") String catalogue,
+        @RequestParam("category") String category, @RequestParam("page") int page) {
+        val data = service.listEssay(catalogue, category, page);
+        if (data == null)
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return data;
+    }
+
+    /**
+     * 推荐内容
+     *
+     * @param id 目标essay
+     * @return 内容列表
+     */
+    @GetMapping("/recommend/get")
+    @ResponseBody
+    public EssayList recommendEssay(HttpServletResponse resp, @RequestParam("id") Integer id) {
+        return service.recommendEssay(id);
+    }
+
+    /**
+     * 获取推荐内容信息
+     *
+     * @param id 目标essay
+     * @return 推荐信息
+     */
+    @GetMapping("/recommend/info")
+    @ResponseBody
+    public EssayRecommendList.EssayRecommendInfo recommendEssayInfo(HttpServletResponse resp,
+        @RequestParam("id") int id) {
+        val data = service.recommendEssayInfo(id);
+        if (data == null)
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return data;
+    }
+
+    /**
+     * 添加推荐内容
+     *
+     * @param req    req
+     * @param id     推荐ID
+     * @param expire 过期时间戳
+     */
+    @GetMapping("/recommend/add")
+    @UserAuth(UserAuth.AuthType.ADMIN)
+    public void addEssayRecommend(HttpServletRequest req, HttpServletResponse resp, @RequestParam("id") int id,
+        @RequestParam(value = "expire", required = false) Long expire) {
+        service.addEssayRecommend(user.getUserIdByCookie(req), id, expire);
+        resp.setStatus(HttpServletResponse.SC_OK);
+    }
+
+    /**
+     * 列出推荐内容
+     *
+     * @param page 页码(0开始)
+     * @return 推荐内容信息列表
+     */
+    @GetMapping("/recommend/list")
+    @UserAuth(UserAuth.AuthType.ADMIN)
+    @ResponseBody
+    public EssayRecommendList listRecommendEssay(@RequestParam(value = "page", defaultValue = "0") int page) {
+        return service.listRecommendEssay(page);
     }
 
     /**

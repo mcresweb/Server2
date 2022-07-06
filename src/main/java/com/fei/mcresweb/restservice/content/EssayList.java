@@ -1,6 +1,7 @@
 package com.fei.mcresweb.restservice.content;
 
 import com.fei.mcresweb.dao.Essay;
+import com.fei.mcresweb.dao.EssayRecommend;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -35,7 +36,7 @@ public class EssayList {
      * @param list 内容列表
      * @return 内容列表
      */
-    @Contract("_, _ -> new")
+    @Contract(value = "_, _ -> new", pure = true)
     public static @NotNull EssayList build(long page, @NonNull Collection<EssayInfo> list) {
         return new EssayList(page, new ArrayList<>(list));
     }
@@ -55,6 +56,25 @@ public class EssayList {
         public EssayInfo(@NonNull Essay essay) {
             this(essay.getId(), essay.getSender().getUsername(), essay.getTitle(), essay.getStar(), essay.getDownload(),
                 essay.getAnyListImg());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            EssayInfo essayInfo = (EssayInfo)o;
+            return id == essayInfo.id;
+        }
+
+        @Override
+        public int hashCode() {
+            return id;
+        }
+
+        public EssayInfo(@NonNull EssayRecommend essayRecommend) {
+            this(essayRecommend.getEssay());
         }
     }
 

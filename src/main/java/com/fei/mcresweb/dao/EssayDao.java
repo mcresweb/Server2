@@ -14,6 +14,8 @@ import javax.transaction.Transactional;
  * 内容
  */
 public interface EssayDao extends CrudRepository<Essay, Integer> {
+    Page<Essay> findAll(Pageable pageable);
+
     /**
      * 通过类别查找内容列表
      *

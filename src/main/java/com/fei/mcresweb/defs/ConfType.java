@@ -6,11 +6,10 @@ import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 配置文件类型
@@ -26,6 +25,23 @@ public abstract class ConfType<T> {
      * 所有类型
      */
     public static final Map<String, ConfType<?>> ALL_TYPES_VIEW = Collections.unmodifiableMap(ALL_TYPES);
+
+    public static abstract class ConfBox<T, K, V extends ConfType<T>> {
+        protected abstract V buildConfType(K k);
+
+        public V getValue(@NonNull K k) {
+            return cache.computeIfAbsent(k, this::buildConfType);
+        }
+
+        public void clearCache(@Nullable K k) {
+            if (k == null) cache.clear();
+            else cache.remove(k);
+        }
+
+        private final HashMap<K, V> cache = new HashMap<>();
+
+
+    }
 
     static abstract class ConfTypeString extends ConfType<String> {
 

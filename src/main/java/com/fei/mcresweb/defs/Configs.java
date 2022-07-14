@@ -1,10 +1,12 @@
 package com.fei.mcresweb.defs;
 
+import com.fei.mcresweb.config.I18n;
 import com.fei.mcresweb.dao.Config;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.security.SecureRandom;
+import java.util.Locale;
 import java.util.Random;
 
 public class Configs {
@@ -121,4 +123,18 @@ public class Configs {
             return System.currentTimeMillis();
         }
     };
+    /**
+     * 邮件内容: 注册邮箱验证码
+     */
+    public static final ConfType.ConfBox<String,Locale, ConfType.ConfTypeString> MAIL_REGCODE_CONTENT=new ConfType.ConfBox<String, Locale, ConfType.ConfTypeString>() {
+    @Override
+    protected ConfType.ConfTypeString buildConfType(Locale locale) {
+        return new ConfType.ConfTypeString("mail_content_"+locale.toLanguageTag()) {
+            @Override
+            public @NonNull String summon() {
+                return I18n.msg("mail.register-code.content",locale);
+            }
+        };
+    }
+};
 }

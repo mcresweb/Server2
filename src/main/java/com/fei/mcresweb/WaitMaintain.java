@@ -61,6 +61,41 @@ public final class WaitMaintain {
      * 延时监听元素
      *
      * @author yuanlu
+     *
+     */
+    @Value
+    @EqualsAndHashCode(callSuper = true)
+    @SuppressWarnings("rawtypes")
+    private static class MapElement extends Element {
+
+        /** 图 */
+        Map		map;
+
+        /** 键 */
+        Object	k;
+
+        /** 值 */
+        Object	old;
+
+        public MapElement(long expire, Map map, Object k, Object old, Runnable clearListener) {
+            super(expire, clearListener);
+            this.map	= map;
+            this.k		= k;
+            this.old	= old;
+        }
+
+        /** 处理 */
+        @Override
+        void handle() {
+            if (map.remove(k, old) && clearListener != null) clearListener.run();
+        }
+    }
+
+
+    /**
+     * 延时监听元素
+     *
+     * @author yuanlu
      */
     @Value
     @EqualsAndHashCode(callSuper = true)
@@ -136,6 +171,24 @@ public final class WaitMaintain {
                 }
             }
         }.start();
+    }
+
+    /**
+     * 将键值对放入map,并设置最长超时时间, 超时后将被清理
+     *
+     * @param <K>           数据类型
+     * @param <V>           数据类型
+     * @param map           图
+     * @param k             键
+     * @param v             值
+     * @param maxTime       等待时长
+     * @param clearListener 清理监听
+     * @return return
+     */
+    public static <K, V> V put(Map<K, V> map, K k, V v, long maxTime, Runnable clearListener) {
+        val old = map.put(k, v);
+        QUEUE.add(new MapElement(System.currentTimeMillis() + maxTime, map, k, v, clearListener));
+        return old;
     }
 
     /**

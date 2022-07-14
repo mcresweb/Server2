@@ -1,5 +1,6 @@
 package com.fei.mcresweb.dao;
 
+import lombok.NonNull;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -9,6 +10,8 @@ import org.springframework.data.repository.CrudRepository;
 public interface UserDao extends CrudRepository<User, Integer> {
 
     User findByUsername(String name);
+    
+    User findByEmail(@NonNull String email);
 
     /**
      * @return 是否存在管理员用户

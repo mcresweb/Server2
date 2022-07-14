@@ -1,6 +1,7 @@
 package com.fei.mcresweb.controller;
 
 import com.fei.mcresweb.Tool;
+import com.fei.mcresweb.config.CallCooling;
 import com.fei.mcresweb.config.I18n;
 import com.fei.mcresweb.config.UserAuth;
 import com.fei.mcresweb.defs.ConfigManager;
@@ -8,6 +9,7 @@ import com.fei.mcresweb.defs.Configs;
 import com.fei.mcresweb.defs.CookiesManager;
 import com.fei.mcresweb.restservice.user.*;
 import com.fei.mcresweb.service.InitService;
+import com.fei.mcresweb.service.MailService;
 import com.fei.mcresweb.service.UserService;
 import lombok.val;
 import org.springframework.http.HttpStatus;
@@ -29,13 +31,15 @@ public class UserController {
     private final ConfigManager configManager;
     private final CookiesManager cookiesManager;
     private final InitService initService;
+    private final MailService mailService;
 
     public UserController(UserService service, ConfigManager configManager, CookiesManager cookiesManager,
-        InitService initService) {
+        InitService initService, MailService mailService) {
         this.service = service;
         this.configManager = configManager;
         this.cookiesManager = cookiesManager;
         this.initService = initService;
+        this.mailService = mailService;
     }
 
     /**
@@ -89,6 +93,18 @@ public class UserController {
             resp.addCookie(service.summonTokenCookie(info.getUserid()));
         }
         return info;
+    }
+
+    /**
+     * 发送邮箱验证码
+     *
+     * @return 注册结果信息
+     */
+    @GetMapping("/check-email")
+    @ResponseBody
+    @CallCooling(1000 * 60)
+    public Boolean checkEmail(HttpServletRequest req, @RequestParam("email") String email) {
+        return mailService.sendRegisterCode(email, I18n.loc(req));
     }
 
     /**

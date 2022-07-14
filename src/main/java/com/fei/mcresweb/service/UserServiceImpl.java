@@ -37,6 +37,7 @@ public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final ConfigManager configManager;
     private final CookiesManager cookiesManager;
+    private final MailService mailService;
     /**
      * jwt加密密钥
      */
@@ -46,11 +47,13 @@ public class UserServiceImpl implements UserService {
      */
     private final JwtParser jwtParser;
 
-    public UserServiceImpl(UserDao repo, ConfigManager configManager, CookiesManager cookiesManager) {
+    public UserServiceImpl(UserDao repo, ConfigManager configManager, CookiesManager cookiesManager,
+        MailService mailService) {
         this.userDao = repo;
         this.configManager = configManager;
 
         jwtKey = Keys.hmacShaKeyFor(configManager.getOrSummon(Configs.JWT_KEY, true));
+        this.mailService = mailService;
         jwtParser = Jwts.parserBuilder().setSigningKey(jwtKey).build();
         this.cookiesManager = cookiesManager;
     }
@@ -73,7 +76,15 @@ public class UserServiceImpl implements UserService {
         if (Math.abs(req.time() - System.currentTimeMillis()) > range) {
             return LoginInfo.byErr(I18n.msg("user.wrong.time", locale));
         }
-        val user = userDao.findByUsername(req.username());
+        User user;
+        if (req.username().isEmpty() || req.password().isEmpty())
+            user = null;
+        else if (maybeUserIdString(req.username()))
+            user = userDao.findById(Integer.parseInt(req.username())).orElse(null);
+        else if (maybeUserEmailString(req.username()))
+            user = userDao.findByEmail(req.username());
+        else
+            user = userDao.findByUsername(req.username());
         if (user == null)
             return LoginInfo.byErr(I18n.msg("user.wrong.user-pwd", locale));
         val pwd = hashString(user.getPassword(), req.time());
@@ -91,6 +102,9 @@ public class UserServiceImpl implements UserService {
         if (isInvalidUserName(req.username()))
             return RegisterInfo.byErr(I18n.msg("user.invalid-data.username", locale));
 
+        if (!mailService.checkRegisterCode(req.email(), req.code()))
+            return RegisterInfo.byErr(I18n.msg("user.wrong.mail-code", locale));
+
         User user = new User();
         user.setUsername(req.username());
         user.setPassword(req.password());
@@ -98,7 +112,10 @@ public class UserServiceImpl implements UserService {
 
         synchronized (this) {
             if (userDao.findByUsername(req.username()) != null)
-                return RegisterInfo.byErr(I18n.msg("user.exist", locale));
+                return RegisterInfo.byErr(I18n.msg("user.exist.name", locale));
+
+            if (userDao.findByEmail(req.email()) != null)
+                return RegisterInfo.byErr(I18n.msg("user.exist.mail", locale));
 
             user = userDao.save(user);
         }

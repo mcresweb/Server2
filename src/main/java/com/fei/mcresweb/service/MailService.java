@@ -21,9 +21,19 @@ public interface MailService {
 
     /**
      * 发送一封注册时验证邮箱的邮件
-     * @param to 接收者
+     *
+     * @param to     接收者
      * @param locale loc
      * @return 是否发送成功
      */
-        boolean sendRegisterCode(@NonNull String to,@NonNull String username, @NonNull Locale locale);
+    boolean sendRegisterCode(@NonNull String to, @NonNull Locale locale);
+
+    /**
+     * 检查注册验证码是否正确
+     *
+     * @param to   邮箱
+     * @param code 邮箱验证码
+     * @return 是否验证通过
+     */
+    boolean checkRegisterCode(@NonNull String to, @NonNull String code);
 }

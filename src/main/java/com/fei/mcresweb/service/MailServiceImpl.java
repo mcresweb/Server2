@@ -40,7 +40,7 @@ public class MailServiceImpl implements MailService {
 
         //create session
         Properties props = new Properties();
-        props.put("mail." + conf.type + ".host", conf.host+":"+conf.port);
+        props.put("mail." + conf.type + ".host", conf.host + ":" + conf.port);
         props.put("mail.debug", conf.debug);
         session = Session.getInstance(props);
     }
@@ -48,7 +48,7 @@ public class MailServiceImpl implements MailService {
     @Override
     public boolean send(@NotNull String to, @NonNull String subject, @NonNull String content) {
         try (Transport bus = session.getTransport(conf.type)) {
-            bus.connect(conf.host,conf.port,conf.user,conf.passwd);
+            bus.connect(conf.host, conf.port, conf.user, conf.passwd);
 
             Message msg = new MimeMessage(session);
 
@@ -63,20 +63,33 @@ public class MailServiceImpl implements MailService {
             msg.saveChanges();
             bus.sendMessage(msg, address);
         } catch (Throwable e) {
-            if (conf.debug) e.printStackTrace();
+            if (conf.debug)
+                e.printStackTrace();
             return false;
         }
         return true;
     }
 
-    private final Map<String,String> registerCode=new ConcurrentHashMap<>();
-    private  final Random random=new SecureRandom();
+    private final Map<String, String> registerCode = new ConcurrentHashMap<>();
+    private final Random random = new SecureRandom();
+
     @Override
-    public boolean sendRegisterCode(@NonNull String to,@NonNull String username, @NonNull Locale locale) {
-        val content = configManager.getOrSummon(Configs.MAIL_REGCODE_CONTENT.getValue(locale), true);
-        val code=Tool.randomNumber(random,6);
-        WaitMaintain.put(registerCode,to,code,1000,null);
-        return send(to,"标题",content.formatted(username,code));
+    public boolean sendRegisterCode(@NonNull String to, @NonNull Locale locale) {
+        val expire = configManager.getOrSummon(Configs.REGCODE_EXPIRE, true);
+        val code = Tool.randomNumber(random, 6);
+
+        var title = configManager.getOrSummon(Configs.MAIL_REGCODE_TITLE.getValue(locale), true);
+        var content = configManager.getOrSummon(Configs.MAIL_REGCODE_CONTENT.getValue(locale), true);
+        title = Tool.parseVar(title, '[', ']', Collections.singletonMap("code", code));
+        content = Tool.parseVar(content, '[', ']', Collections.singletonMap("code", code));
+
+        WaitMaintain.put(registerCode, to, code, expire, null);
+        return send(to, title, content);
+    }
+
+    @Override
+    public boolean checkRegisterCode(@NonNull String to, @NonNull String code) {
+        return registerCode.remove(to, code.trim());
     }
 
     @Component

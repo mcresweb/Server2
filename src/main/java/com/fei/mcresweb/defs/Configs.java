@@ -126,15 +126,41 @@ public class Configs {
     /**
      * 邮件内容: 注册邮箱验证码
      */
-    public static final ConfType.ConfBox<String,Locale, ConfType.ConfTypeString> MAIL_REGCODE_CONTENT=new ConfType.ConfBox<String, Locale, ConfType.ConfTypeString>() {
-    @Override
-    protected ConfType.ConfTypeString buildConfType(Locale locale) {
-        return new ConfType.ConfTypeString("mail_content_"+locale.toLanguageTag()) {
+    public static final ConfType.ConfBox<String, Locale, ConfType.ConfTypeString> MAIL_REGCODE_CONTENT =
+        new ConfType.ConfBox<>() {
             @Override
-            public @NonNull String summon() {
-                return I18n.msg("mail.register-code.content",locale);
+            protected ConfType.ConfTypeString buildConfType(Locale locale) {
+                return new ConfType.ConfTypeString("mail_register_code_content_" + locale.toLanguageTag()) {
+                    @Override
+                    public @NonNull String summon() {
+                        return I18n.msg("mail.register-code.content", locale);
+                    }
+                };
             }
         };
-    }
-};
+    /**
+     * 邮件标题: 注册邮箱验证码
+     */
+    public static final ConfType.ConfBox<String, Locale, ConfType.ConfTypeString> MAIL_REGCODE_TITLE =
+        new ConfType.ConfBox<>() {
+            @Override
+            protected ConfType.ConfTypeString buildConfType(Locale locale) {
+                return new ConfType.ConfTypeString("mail_register_code_title_" + locale.toLanguageTag()) {
+                    @Override
+                    public @NonNull String summon() {
+                        return I18n.msg("mail.register-code.title", locale);
+                    }
+                };
+            }
+        };
+
+    /**
+     * 注册邮箱验证码过期时长(ms)
+     */
+    public static final ConfType<Long> REGCODE_EXPIRE = new ConfType.ConfTypeLong("register-code.expire") {
+        @Override
+        public @NonNull Long summon() {
+            return 1000L * 60 * 15;
+        }
+    };
 }

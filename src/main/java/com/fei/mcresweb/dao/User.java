@@ -24,7 +24,8 @@ import java.util.Objects;
 @Setter
 @ToString
 @NoArgsConstructor
-@Table(name = "user")
+@Table(name = "user", uniqueConstraints = {@UniqueConstraint(columnNames = {"username"}),
+    @UniqueConstraint(columnNames = {"email"})})
 @FieldNameConstants
 public class User {
     /**

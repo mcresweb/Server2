@@ -134,7 +134,7 @@ public class ContentServiceImpl implements ContentService {
             return null;
         val list = essayDao.findByCatalogueKeyEqualsAndCategoryKeyEquals(catalogue, category, PageRequest.of(page, 5));
         if (list == null || list.getTotalElements() <= 0)
-            return null;
+            return EssayList.EMPTY;
         return EssayList.build(list.getTotalPages(),
             list.stream().map(EssayList.EssayInfo::new).collect(Collectors.toList()));
     }

@@ -9,10 +9,7 @@ import lombok.Value;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 内容列表
@@ -20,6 +17,10 @@ import java.util.UUID;
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class EssayList {
+    /**
+     * 空的内容列表
+     */
+    public static final EssayList EMPTY = new EssayList(0, Collections.emptyList());
     /**
      * 页数
      */

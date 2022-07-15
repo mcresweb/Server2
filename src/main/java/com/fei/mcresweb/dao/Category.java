@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * 大分类信息
+ * 小分类信息
  */
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -21,7 +21,7 @@ import java.util.UUID;
 @Table(name = "category")
 public class Category {
     /**
-     * 大分类标识符
+     * 小分类标识符
      */
     @Id
     @NonNull

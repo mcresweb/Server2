@@ -13,6 +13,7 @@ import java.util.UUID;
  * 小分类信息
  */
 @Entity
+@IdClass(CategoryPK.class)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter
@@ -32,6 +33,7 @@ public class Category {
     /**
      * 所属大分类
      */
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false, name = "catalogue", insertable = false, updatable = false)
     @NonNull
@@ -43,7 +45,8 @@ public class Category {
      * 所属大分类的key
      */
     @NonNull
-    @Column(nullable = false, name = "catalogue")
+    @Column(nullable = false, name = "catalogue", insertable = false, updatable = false)
+    @Comment("所属大分类")
     String catalogueKey;
 
     /**
@@ -73,6 +76,7 @@ public class Category {
      * 图片UUID
      */
     @Column(name = "img", columnDefinition = "BINARY(16)")
+    @Comment("描述图片")
     UUID imgID;
 
     @Override

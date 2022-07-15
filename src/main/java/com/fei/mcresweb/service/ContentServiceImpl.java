@@ -235,7 +235,7 @@ public class ContentServiceImpl implements ContentService {
                 if (!withCache(() -> cache_catalogue.containsKey(data.catalogue())))
                     return ModResp.byErr(I18n.msg("notfound.catalogue", locale));
                 try {
-                    categoryDao.deleteById(data.key());
+                    categoryDao.deleteById(new CategoryPK(data.key(), data.catalogue()));
                 } catch (DataIntegrityViolationException e) {
                     return ModResp.byErr(I18n.msg("not-empty.category", locale));
                 }

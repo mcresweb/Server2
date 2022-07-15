@@ -55,7 +55,10 @@ public class Essay {
      */
     @NonNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false, name = "category", insertable = false, updatable = false)
+    //    @JoinColumn(nullable = false, name = "category", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "category"))
+    @JoinColumns({
+        @JoinColumn(nullable = false, name = "category", referencedColumnName = "`key`", insertable = false, updatable = false),
+        @JoinColumn(nullable = false, name = "catalogue", referencedColumnName = "catalogue", insertable = false, updatable = false)})
     @ToString.Exclude
     @Comment("小分类")
     Category category;

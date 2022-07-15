@@ -5,5 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 /**
  * 小分类
  */
-public interface CategoryDao extends CrudRepository<Category, String> {
+public interface CategoryDao extends CrudRepository<Category, CategoryPK> {
 }

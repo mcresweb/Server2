@@ -23,15 +23,16 @@ import java.util.UUID;
  * @param type        类型
  * @param tags        标签
  * @param description 简略描述
+ * @param files       资源文件数量
  */
 public record EssayDetail(int id, @NonNull String catalogue, @NonNull String category, int sender,
                           @NonNull String title, Double star, long starAmount, long download,
                           @NonNull Collection<UUID> imgs, @NonNull String content, @NonNull String type,
-                          Collection<String> tags, String description) {
+                          Collection<String> tags, String description, int files) {
     public EssayDetail(@NonNull Essay essay) {
         this(essay.getId(), essay.getCatalogueKey(), essay.getCategoryKey(), essay.getSenderID(), essay.getTitle(),
             essay.getStar(), essay.getStarAmount(), essay.getDownload(),
             essay.getImg().stream().filter(EssayImgs::isShowInHead).map(EssayImgs::getImgId).toList(),
-            essay.getContent(), essay.getType(), essay.getTagsList(), essay.getDescription());
+            essay.getContent(), essay.getType(), essay.getTagsList(), essay.getDescription(), essay.getFiles().size());
     }
 }

@@ -151,6 +151,9 @@ public class Essay {
     @Nullable
     String description;
 
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "essay", targetEntity = EssayFileInfo.class)
+    List<EssayFileInfo> files;
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
